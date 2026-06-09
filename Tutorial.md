@@ -142,6 +142,9 @@ Let's start by building the visual foundation of our creator upload page. We won
 
 Open `app/page.tsx` and replace its contents with our base UI structure:
 
+<details>
+<summary>Click to view the base <code>app/page.tsx</code> UI code</summary>
+
 ```tsx
 // filepath: app/page.tsx
 import { UploadCloud, Link as LinkIcon, ShieldCheck, Coins } from "lucide-react";
@@ -196,6 +199,7 @@ export default function Home() {
   );
 }
 ```
+</details>
 
 If you run `npm run dev` now, you'll see a sleek, static upload interface!
 
@@ -206,6 +210,9 @@ If you run `npm run dev` now, you'll see a sleek, static upload interface!
 Now that we have our base UI, let's make it interactive. We need React state to track the selected file, the price, the recipient address, and whether we're currently uploading.
 
 Update `app/page.tsx` to include our hooks and the network constants:
+
+<details>
+<summary>Click to view the <code>app/page.tsx</code> state update</summary>
 
 ```tsx
 // filepath: app/page.tsx
@@ -264,6 +271,7 @@ export default function Home() {
   // ... (Keep the JSX return statement from Step 1, but wire the state to the inputs and button) ...
 }
 ```
+</details>
 
 Let me break down what's happening here:
 
@@ -280,6 +288,9 @@ We now have the data ready to be sent to our server.
 When the frontend sends the file, we need to encrypt it server-side so nobody can read it without paying. We also need to save metadata so the server knows what to charge later.
 
 Create `app/api/upload/route.ts`:
+
+<details>
+<summary>Click to view the <code>app/api/upload/route.ts</code> code</summary>
 
 ```typescript
 // filepath: app/api/upload/route.ts
@@ -325,6 +336,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ fileId });
 }
 ```
+</details>
 
 At this point, if you upload a file, you'll see it securely saved inside the `.storage/` directory in your project!
 
@@ -335,6 +347,9 @@ At this point, if you upload a file, you'll see it securely saved inside the `.s
 This is the core of the x402 protocol. Let's build the API that handles the 402 challenge and settles the blockchain transaction.
 
 Create `app/api/download/[id]/route.ts`:
+
+<details>
+<summary>Click to view the <code>app/api/download/[id]/route.ts</code> code</summary>
 
 ```typescript
 // filepath: app/api/download/[id]/route.ts
@@ -398,6 +413,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 }
 ```
+</details>
 
 Let's break down the magic happening in this endpoint:
 
@@ -471,6 +487,9 @@ Now let's wire that UI up to the blockchain! We need to connect the user's walle
 
 Update `app/download/[id]/page.tsx` with the core signing logic:
 
+<details>
+<summary>Click to view the <code>payAndDownload</code> integration</summary>
+
 ```tsx
 // filepath: app/download/[id]/page.tsx
 "use client";
@@ -540,6 +559,7 @@ import { signAuthorization, encodePaymentSignatureHeader, createPaymentPayload, 
 
   // ... (JSX render) ...
 ```
+</details>
 
 This is the most important part of the frontend! Let's understand what this function is doing:
 
