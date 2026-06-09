@@ -264,6 +264,12 @@ export default function Home() {
 }
 ```
 
+Let me break down what's happening here:
+
+* **State Management**: We use `useState` to track everything from the selected file to the generated links.
+* **Network Constants**: We define `USDC_ADDRESS` (the token users will pay with) and `NETWORK` (`eip155:1439` is Injective Testnet).
+* **The Upload Function**: Inside `handleCreateLink`, we pack all our data into a `FormData` object and send it to our `/api/upload` endpoint. When the server responds with a `fileId`, we generate two distinct links: one for human users (the UI) and one for AI agents (the raw API).
+
 We now have the data ready to be sent to our server.
 
 ---
@@ -392,6 +398,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 ```
 
+Let's break down the magic happening in this endpoint:
+
+1. **The 402 Challenge**: If the user (or AI agent) hits this endpoint without a `PAYMENT-SIGNATURE` header, we block the request and return an HTTP `402 Payment Required` status. We also include the `requirements` JSON, which tells the agent exactly how much USDC it costs and where to send it.
+2. **The Facilitator**: The `InjectiveFacilitator` is a server-side wallet initialized with your `PRIVATE_KEY`. It doesn't receive the payment; it simply pays the INJ gas fee to broadcast the transaction.
+3. **Verification & Settlement**: When the request *does* have a signature, we verify that it's cryptographically valid and matches our requirements. If it passes, we call `facilitator.settle()`, which actually executes the transfer on the blockchain!
+4. **Atomic Delivery**: Notice how we *only* decrypt the file after `settle()` finishes successfully. This guarantees you get paid before the content is unlocked.
+
 ---
 
 ## Step 5: Building the Download UI (Human Pay)
@@ -470,7 +483,14 @@ import { signAuthorization, encodePaymentSignatureHeader, createPaymentPayload, 
   // ... (JSX render) ...
 ```
 
-The buyer is not sending a transaction themselves—they are just signing a message. For the full, runnable code of this page with all the UI components and wallet connection logic, you can view the complete file in the GitHub repository.
+This is the most important part of the frontend! Let's understand what this function is doing:
+
+* **Authorization Parameters**: We define the `auth` object. Notice `parseUnits(meta.price, 6)`—this converts the dollar price into raw USDC units (USDC has 6 decimal places). We also define a `validAfter` and `validBefore` window (5 minutes) so the signature expires if it's not used quickly.
+* **Gasless Signing**: The `signAuthorization` function prompts MetaMask. The user is *not* sending a transaction; they are just signing a typed data message (EIP-712) authorizing the transfer of their USDC. They don't pay any gas fees!
+* **Building the Header**: We pack that signature into a `PAYMENT-SIGNATURE` header using `createPaymentPayload`.
+* **Fetching the File**: We hit the download API again, but this time we attach the signature header. The server verifies it, settles it on-chain, and streams the decrypted file back to us!
+
+For the full, runnable code of this page with all the UI components and wallet connection logic, you can view the complete file in the GitHub repository.
 
 ---
 
