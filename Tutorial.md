@@ -11,13 +11,13 @@ Don't worry if you've never worked with the x402 protocol or Injective before - 
 * [What We're Building](#what-were-building)
 * [Understanding the x402 Protocol & EIP-3009](#understanding-the-x402-protocol--eip-3009)
 * [Project Setup](#project-setup)
-* [Step 1: Building the Base Upload UI](#step-1-building-the-base-upload-ui)
-* [Step 2: Adding State & Interactivity](#step-2-adding-state--interactivity)
-* [Step 3: The Upload API (Encryption)](#step-3-the-upload-api-encryption)
-* [Step 4: The Download API (Facilitator)](#step-4-the-download-api-facilitator)
-* [Step 5: Building the Base Download UI](#step-5-building-the-base-download-ui)
-* [Step 6: Wiring the Download Interactivity](#step-6-wiring-the-download-interactivity)
-* [Step 7: Testing the Agent Flow](#step-7-testing-the-agent-flow)
+* [Building the Upload UI](#building-the-upload-ui)
+* [Adding Upload Interactivity](#adding-upload-interactivity)
+* [Creating the Upload API (Encryption)](#creating-the-upload-api-encryption)
+* [Creating the Download API (Facilitator)](#creating-the-download-api-facilitator)
+* [Building the Download UI](#building-the-download-ui)
+* [Wiring the Download Logic](#wiring-the-download-logic)
+* [Testing the Agent Flow](#testing-the-agent-flow)
 * [Conclusion](#conclusion)
 
 ## Prerequisites
@@ -136,7 +136,7 @@ PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY
 
 ---
 
-## Step 1: Building the Base Upload UI
+## Building the Upload UI
 
 Let's start by building the visual foundation of our creator upload page. We won't worry about making it work just yet—we just want it to look good.
 
@@ -205,7 +205,7 @@ If you run `npm run dev` now, you'll see a sleek, static upload interface!
 
 ---
 
-## Step 2: Adding State & Interactivity
+## Adding Upload Interactivity
 
 Now that we have our base UI, let's make it interactive. We need React state to track the selected file, the price, the recipient address, and whether we're currently uploading.
 
@@ -283,7 +283,7 @@ We now have the data ready to be sent to our server.
 
 ---
 
-## Step 3: The Upload API (Encryption)
+## Creating the Upload API (Encryption)
 
 When the frontend sends the file, we need to encrypt it server-side so nobody can read it without paying. We also need to save metadata so the server knows what to charge later.
 
@@ -342,7 +342,7 @@ At this point, if you upload a file, you'll see it securely saved inside the `.s
 
 ---
 
-## Step 4: The Download API (Facilitator)
+## Creating the Download API (Facilitator)
 
 This is the core of the x402 protocol. Let's build the API that handles the 402 challenge and settles the blockchain transaction.
 
@@ -424,7 +424,7 @@ Let's break down the magic happening in this endpoint:
 
 ---
 
-## Step 5: Building the Base Download UI
+## Building the Download UI
 
 Since standard web browsers don't understand HTTP 402, we need a frontend page where humans can see the price and pay. Just like the upload page, let's start with the base UI layout.
 
@@ -481,7 +481,7 @@ This creates a clean, minimal "Checkout" card showing the file details and a Con
 
 ---
 
-## Step 6: Wiring the Download Interactivity
+## Wiring the Download Logic
 
 Now let's wire that UI up to the blockchain! We need to connect the user's wallet, request an EIP-3009 signature, and send it to our API.
 
@@ -572,7 +572,7 @@ For the full, runnable code of this page with all the UI components and wallet c
 
 ---
 
-## Step 7: Testing the Agent Flow
+## Testing the Agent Flow
 
 The best part about x402 is that it's machine-readable. We can test the programmatic AI Agent flow using a simple script.
 
