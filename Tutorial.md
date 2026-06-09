@@ -11,10 +11,12 @@ Don't worry if you've never worked with the x402 protocol or Injective before - 
 * [What We're Building](#what-were-building)
 * [Understanding the x402 Protocol & EIP-3009](#understanding-the-x402-protocol--eip-3009)
 * [Project Setup](#project-setup)
-* [Step 1: The Upload API (Encryption)](#step-1-the-upload-api-encryption)
-* [Step 2: The Download API (Facilitator)](#step-2-the-download-api-facilitator)
-* [Step 3: Building the UI (Human Pay)](#step-3-building-the-ui-human-pay)
-* [Step 4: Testing the Agent Flow](#step-4-testing-the-agent-flow)
+* [Step 1: Building the Base Upload UI](#step-1-building-the-base-upload-ui)
+* [Step 2: Adding State & Interactivity](#step-2-adding-state--interactivity)
+* [Step 3: The Upload API (Encryption)](#step-3-the-upload-api-encryption)
+* [Step 4: The Download API (Facilitator)](#step-4-the-download-api-facilitator)
+* [Step 5: Building the Download UI (Human Pay)](#step-5-building-the-download-ui-human-pay)
+* [Step 6: Testing the Agent Flow](#step-6-testing-the-agent-flow)
 * [Conclusion](#conclusion)
 
 ## Prerequisites
@@ -96,9 +98,7 @@ This gives your application superpowers: seamless UX for humans, and native API 
 
 Before we dive into coding, let's set up our complete project structure.
 
-### Creating the Project Structure
-
-First, create a new Next.js project using Vite:
+First, create a new Next.js project:
 
 ```bash
 npx create-next-app@latest injective-x402-app
@@ -106,8 +106,6 @@ cd injective-x402-app
 ```
 
 Choose **TypeScript**, **Tailwind CSS**, and the **App Router** during setup.
-
-### Installing Dependencies
 
 Now let's install the Injective x402 SDK and viem:
 
@@ -137,11 +135,134 @@ PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY
 
 ---
 
-## Step 1: The Upload API (Encryption)
+## Step 1: Building the Base Upload UI
 
-When a creator uploads a file, we need to encrypt it so that nobody can read it without paying. We also need to save metadata (price, asset, recipient) so the server knows what to charge later.
+Let's start by building the visual foundation of our creator upload page. We won't worry about making it work just yet—we just want it to look good.
 
-Let's create our upload route:
+Open `app/page.tsx` and replace its contents with our base UI structure:
+
+```tsx
+// filepath: app/page.tsx
+import { UploadCloud, Link as LinkIcon, ShieldCheck, Coins } from "lucide-react";
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <main className="w-full max-w-2xl flex flex-col items-center">
+        
+        {/* Header */}
+        <div className="text-center space-y-3 mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border">
+            <Coins size={14} className="text-black" />
+            <span className="text-xs font-medium">x402 on Injective</span>
+          </div>
+          <h1 className="text-4xl font-bold text-black">Pay-to-Unlock Content</h1>
+        </div>
+
+        {/* Main Card */}
+        <div className="w-full bg-white border border-neutral-200 rounded-2xl shadow-xl p-6 space-y-5">
+          
+          {/* Upload Zone */}
+          <div className="border-2 border-dashed border-neutral-200 rounded-xl p-8 text-center bg-neutral-50/50">
+            <UploadCloud className="mx-auto mb-3 text-neutral-400" size={32} />
+            <p className="text-sm font-medium text-black">Click to upload or drag and drop</p>
+          </div>
+
+          {/* Settings Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Price</label>
+              <input type="number" placeholder="0.00" className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Recipient Address</label>
+              <input type="text" placeholder="0x..." className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+          </div>
+
+          {/* Footer & Submit */}
+          <div className="flex items-center gap-2 p-2.5 bg-neutral-50 rounded-lg text-xs text-neutral-600">
+            <ShieldCheck size={16} className="text-black" />
+            <p>Files are encrypted at rest and unlocked only upon payment.</p>
+          </div>
+          
+          <button className="w-full flex justify-center gap-2 bg-black text-white py-3 rounded-lg font-semibold">
+            <LinkIcon size={16} /> Create Gated Link
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
+```
+
+If you run `npm run dev` now, you'll see a sleek, static upload interface!
+
+---
+
+## Step 2: Adding State & Interactivity
+
+Now that we have our base UI, let's make it interactive. We need React state to track the selected file, the price, the recipient address, and whether we're currently uploading.
+
+Update `app/page.tsx` to include our hooks and the network constants:
+
+```tsx
+// filepath: app/page.tsx
+"use client";
+
+import { useState } from "react";
+import { UploadCloud, Link as LinkIcon, ShieldCheck, Coins } from "lucide-react";
+
+// Testnet USDC address and Chain ID
+const USDC_ADDRESS = "0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d" as `0x${string}`;
+const NETWORK = "eip155:1439"; 
+
+export default function Home() {
+  const [file, setFile] = useState<File | null>(null);
+  const [price, setPrice] = useState("");
+  const [recipientAddress, setRecipientAddress] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [humanUrl, setHumanUrl] = useState("");
+  const [agentUrl, setAgentUrl] = useState("");
+
+  const handleCreateLink = async () => {
+    if (!file || !price || !recipientAddress) return;
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("price", price);
+      formData.append("recipientAddress", recipientAddress);
+      formData.append("assetAddress", USDC_ADDRESS);
+      formData.append("network", NETWORK);
+
+      // We will create this API route in the next step!
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      
+      setHumanUrl(`${window.location.origin}/download/${data.fileId}`);
+      setAgentUrl(`${window.location.origin}/api/download/${data.fileId}`);
+    } catch (error) {
+      alert("Failed to upload");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // ... (Keep the JSX return statement from Step 1, but wire the state to the inputs and button) ...
+}
+```
+
+We now have the data ready to be sent to our server.
+
+---
+
+## Step 3: The Upload API (Encryption)
+
+When the frontend sends the file, we need to encrypt it server-side so nobody can read it without paying. We also need to save metadata so the server knows what to charge later.
+
+Create `app/api/upload/route.ts`:
 
 ```typescript
 // filepath: app/api/upload/route.ts
@@ -151,8 +272,7 @@ import path from "path";
 import crypto from "crypto";
 
 const STORAGE_DIR = path.join(process.cwd(), ".storage");
-const SECRET = process.env.ENCRYPTION_SECRET!;
-const ENCRYPTION_KEY = crypto.scryptSync(SECRET, "salt", 32);
+const ENCRYPTION_KEY = crypto.scryptSync(process.env.ENCRYPTION_SECRET!, "salt", 32);
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -162,44 +282,42 @@ export async function POST(req: NextRequest) {
   const assetAddress = formData.get("assetAddress") as string;
   const network = formData.get("network") as string;
 
+  // 1. Setup Encryption
   const fileId = crypto.randomUUID();
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv("aes-256-cbc", ENCRYPTION_KEY, iv);
   
+  // 2. Encrypt the file
   const buffer = Buffer.from(await file.arrayBuffer());
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
   const finalFileContent = Buffer.concat([iv, encrypted]);
 
-  // Ensure storage dir exists and save Encrypted File
+  // 3. Save to disk
   await fs.mkdir(STORAGE_DIR, { recursive: true });
   await fs.writeFile(path.join(STORAGE_DIR, fileId), finalFileContent);
 
-  // Save Metadata
+  // 4. Save metadata "price tag"
   const metadata = {
     id: fileId, filename: file.name, size: file.size,
     mimeType: file.type || "application/octet-stream",
     price, network, recipientAddress, assetAddress
   };
   
-  await fs.writeFile(
-    path.join(STORAGE_DIR, `${fileId}.json`), 
-    JSON.stringify(metadata, null, 2)
-  );
+  await fs.writeFile(path.join(STORAGE_DIR, `${fileId}.json`), JSON.stringify(metadata, null, 2));
 
   return NextResponse.json({ fileId });
 }
 ```
 
-Let me break down what's happening here:
-- We generate a random `fileId` and a random Initialization Vector (`iv`).
-- We encrypt the file using `aes-256-cbc` and prepend the `iv` to the file so we can decrypt it later.
-- We save the metadata JSON right next to it. This metadata acts as our "price tag".
+At this point, if you upload a file, you'll see it securely saved inside the `.storage/` directory in your project!
 
 ---
 
-## Step 2: The Download API (Facilitator)
+## Step 4: The Download API (Facilitator)
 
-This is the core of the x402 protocol. Let's see how our server acts as a Facilitator.
+This is the core of the x402 protocol. Let's build the API that handles the 402 challenge and settles the blockchain transaction.
+
+Create `app/api/download/[id]/route.ts`:
 
 ```typescript
 // filepath: app/api/download/[id]/route.ts
@@ -210,8 +328,6 @@ import crypto from "crypto";
 import { decodePaymentSignatureHeader, InjectiveFacilitator } from "@injectivelabs/x402";
 
 // ... (Encryption setup same as upload) ...
-
-const FACILITATOR_PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}`;
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const { id } = await params;
@@ -224,13 +340,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     scheme: "exact",
     network: metadata.network,
     asset: metadata.assetAddress,
-    amount: Math.floor(parseFloat(metadata.price) * 1_000_000).toString(), // USDC has 6 decimals
+    amount: Math.floor(parseFloat(metadata.price) * 1_000_000).toString(),
     payTo: metadata.recipientAddress,
     maxTimeoutSeconds: 60,
     extra: {},
   };
 
-  const facilitator = new InjectiveFacilitator({ privateKey: FACILITATOR_PRIVATE_KEY });
+  const facilitator = new InjectiveFacilitator({ 
+    privateKey: process.env.PRIVATE_KEY as `0x${string}` 
+  });
 
   // 3. Check for Payment Header
   const signatureHeader = req.headers.get("PAYMENT-SIGNATURE");
@@ -239,7 +357,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ x402Version: 2, accepts: [requirements] }, { status: 402 });
   }
 
-  // 4. Verify & Settle
+  // 4. Verify & Settle On-Chain
   const paymentPayload = decodePaymentSignatureHeader(signatureHeader);
   const verifyResult = await facilitator.verify(paymentPayload, requirements);
   
@@ -247,18 +365,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: "Payment invalid" }, { status: 402 });
   }
 
-  // Broadcast to blockchain
   await facilitator.settle({ paymentPayload, paymentRequirements: requirements });
 
   // 5. Decrypt and Stream File
   const encryptedFile = await fs.readFile(path.join(STORAGE_DIR, id));
   const iv = encryptedFile.subarray(0, 16);
   const cipherText = encryptedFile.subarray(16);
-  
   const decipher = crypto.createDecipheriv("aes-256-cbc", ENCRYPTION_KEY, iv);
-  const decrypted = Buffer.concat([decipher.update(cipherText), decipher.final()]);
-
-  return new NextResponse(decrypted, {
+  
+  return new NextResponse(Buffer.concat([decipher.update(cipherText), decipher.final()]), {
     headers: {
       "Content-Type": metadata.mimeType,
       "Content-Disposition": `attachment; filename="${metadata.filename}"`,
@@ -267,30 +382,28 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 ```
 
-When a request comes in:
-1. If there's no payment, we return a `402 Payment Required` challenge.
-2. If there is a `PAYMENT-SIGNATURE` header, we verify it.
-3. If valid, we settle the transaction on-chain.
-4. Finally, we decrypt and return the file.
-
 ---
 
-## Step 3: Building the UI (Human Pay)
+## Step 5: Building the Download UI (Human Pay)
 
-Since standard web browsers don't understand HTTP 402, we need a frontend page that connects a user's wallet, requests an EIP-3009 signature, and sends it to our API.
+Since web browsers don't understand HTTP 402, we need a frontend page that asks the user to connect their wallet and sign the EIP-3009 message. 
+
+Create `app/download/[id]/page.tsx` and start with the core logic:
 
 ```typescript
 // filepath: app/download/[id]/page.tsx
-import { createWalletClient, custom, parseUnits } from "viem";
-import { signAuthorization, encodePaymentSignatureHeader, createPaymentPayload } from "@injectivelabs/x402";
+"use client";
 
-// ... (UI Component Setup) ...
+import { createWalletClient, custom, parseUnits } from "viem";
+import { signAuthorization, encodePaymentSignatureHeader, createPaymentPayload, getViemChain } from "@injectivelabs/x402";
+
+// ... (UI Component Setup goes here) ...
 
 async function payAndDownload() {
   // 1. Setup Viem Wallet Client
   const walletClient = createWalletClient({
     account,
-    chain: INJECTIVE_CHAIN,
+    chain: getViemChain("eip155:1439"), // Injective Testnet
     transport: custom((window as any).ethereum),
   });
 
@@ -306,7 +419,7 @@ async function payAndDownload() {
 
   // 3. Request Signature from Wallet (MetaMask)
   const signature = await signAuthorization(
-    walletClient, meta.assetAddress, "USDC", CHAIN_ID, auth, "2"
+    walletClient, meta.assetAddress, "USDC", 1439, auth, "2"
   );
 
   // 4. Build x402 Header
@@ -328,11 +441,11 @@ async function payAndDownload() {
 }
 ```
 
-Notice how we use `signAuthorization`. The buyer is not sending a transaction themselves—they are just signing a message.
+The buyer is not sending a transaction themselves—they are just signing a message.
 
 ---
 
-## Step 4: Testing the Agent Flow
+## Step 6: Testing the Agent Flow
 
 The best part about x402 is that it's machine-readable. We can test the programmatic AI Agent flow using a simple script.
 
