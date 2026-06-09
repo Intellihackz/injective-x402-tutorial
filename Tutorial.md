@@ -15,8 +15,9 @@ Don't worry if you've never worked with the x402 protocol or Injective before - 
 * [Step 2: Adding State & Interactivity](#step-2-adding-state--interactivity)
 * [Step 3: The Upload API (Encryption)](#step-3-the-upload-api-encryption)
 * [Step 4: The Download API (Facilitator)](#step-4-the-download-api-facilitator)
-* [Step 5: Building the Download UI (Human Pay)](#step-5-building-the-download-ui-human-pay)
-* [Step 6: Testing the Agent Flow](#step-6-testing-the-agent-flow)
+* [Step 5: Building the Base Download UI](#step-5-building-the-base-download-ui)
+* [Step 6: Wiring the Download Interactivity](#step-6-wiring-the-download-interactivity)
+* [Step 7: Testing the Agent Flow](#step-7-testing-the-agent-flow)
 * [Conclusion](#conclusion)
 
 ## Prerequisites
@@ -407,11 +408,68 @@ Let's break down the magic happening in this endpoint:
 
 ---
 
-## Step 5: Building the Download UI (Human Pay)
+## Step 5: Building the Base Download UI
 
-Since web browsers don't understand HTTP 402, we need a frontend page that asks the user to connect their wallet and sign the EIP-3009 message. 
+Since standard web browsers don't understand HTTP 402, we need a frontend page where humans can see the price and pay. Just like the upload page, let's start with the base UI layout.
 
-Create `app/download/[id]/page.tsx` and start with the core logic:
+Create `app/download/[id]/page.tsx` and paste the base layout:
+
+<details>
+<summary>Click to view the base <code>app/download/[id]/page.tsx</code> UI code</summary>
+
+```tsx
+// filepath: app/download/[id]/page.tsx
+"use client";
+
+import { FileText, Wallet, Lock, CheckCircle, Loader2 } from "lucide-react";
+
+export default function DownloadPage() {
+  // We'll wire up real state in the next step!
+  const meta = { filename: "tutorial_video.mp4", size: 10485760, price: "5.00", network: "eip155:1439", recipientAddress: "0x123..." };
+  const step = "idle";
+  const account = null;
+
+  return (
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden p-6 space-y-6">
+        
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Pay to Download</h1>
+        </div>
+
+        <div className="flex items-start gap-4 p-4 bg-neutral-50 rounded-xl">
+          <FileText size={24} className="text-neutral-600" />
+          <div>
+            <p className="text-sm font-semibold">{meta.filename}</p>
+            <p className="text-xs text-neutral-500">{(meta.size / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center px-2">
+          <span className="text-sm text-neutral-500">Price</span>
+          <span className="text-2xl font-bold">${meta.price} <span className="text-sm font-normal text-neutral-500">USDC</span></span>
+        </div>
+
+        <button className="w-full flex justify-center gap-2 bg-black text-white font-semibold py-3 rounded-lg">
+          <Wallet size={16}/> Connect Wallet
+        </button>
+
+      </div>
+    </div>
+  );
+}
+```
+</details>
+
+This creates a clean, minimal "Checkout" card showing the file details and a Connect Wallet button.
+
+---
+
+## Step 6: Wiring the Download Interactivity
+
+Now let's wire that UI up to the blockchain! We need to connect the user's wallet, request an EIP-3009 signature, and send it to our API.
+
+Update `app/download/[id]/page.tsx` with the core signing logic:
 
 ```tsx
 // filepath: app/download/[id]/page.tsx
@@ -494,7 +552,7 @@ For the full, runnable code of this page with all the UI components and wallet c
 
 ---
 
-## Step 6: Testing the Agent Flow
+## Step 7: Testing the Agent Flow
 
 The best part about x402 is that it's machine-readable. We can test the programmatic AI Agent flow using a simple script.
 
