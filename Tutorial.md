@@ -211,9 +211,8 @@ Update `app/page.tsx` to include our hooks and the network constants:
 "use client";
 
 import { useState } from "react";
-import { UploadCloud, Link as LinkIcon, ShieldCheck, Coins } from "lucide-react";
+import { UploadCloud, Link as LinkIcon, FileCheck2, ShieldCheck, Coins } from "lucide-react";
 
-// Testnet USDC address and Chain ID
 const USDC_ADDRESS = "0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d" as `0x${string}`;
 const NETWORK = "eip155:1439"; 
 
@@ -221,9 +220,30 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [price, setPrice] = useState("");
   const [recipientAddress, setRecipientAddress] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [humanUrl, setHumanUrl] = useState("");
   const [agentUrl, setAgentUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [copied, setCopied] = useState<"human" | "agent" | null>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => setIsDragging(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) setFile(e.target.files[0]);
+  };
 
   const handleCreateLink = async () => {
     if (!file || !price || !recipientAddress) return;
@@ -237,20 +257,107 @@ export default function Home() {
       formData.append("assetAddress", USDC_ADDRESS);
       formData.append("network", NETWORK);
 
-      // We will create this API route in the next step!
       const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       
       setHumanUrl(`${window.location.origin}/download/${data.fileId}`);
       setAgentUrl(`${window.location.origin}/api/download/${data.fileId}`);
     } catch (error) {
-      alert("Failed to upload");
+      alert("Failed to upload and encrypt file.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  // ... (Keep the JSX return statement from Step 1, but wire the state to the inputs and button) ...
+  const handleReset = () => {
+    setFile(null); setPrice(""); setHumanUrl(""); setAgentUrl(""); setCopied(null);
+  };
+
+  function copyUrl(type: "human" | "agent") {
+    const url = type === "human" ? humanUrl : agentUrl;
+    navigator.clipboard.writeText(url);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4 selection:bg-black selection:text-white">
+      <main className="w-full max-w-2xl flex flex-col items-center">
+        <div className="text-center space-y-3 mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-neutral-200 text-xs font-medium shadow-sm">
+            <Coins size={14} className="text-black" />
+            <span>x402 on Injective</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-black">Pay-to-Unlock Content</h1>
+        </div>
+
+        <div className="w-full bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden">
+          {!humanUrl ? (
+            <div className="p-6 space-y-5">
+              <div 
+                className={`relative border-2 border-dashed rounded-xl p-6 text-center ${isDragging ? "border-black bg-neutral-50" : "border-neutral-200"}`}
+                onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+              >
+                <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} />
+                <div className="flex flex-col items-center gap-3 pointer-events-none">
+                  {file ? (
+                    <>
+                      <div className="p-2 bg-black rounded-full text-white"><FileCheck2 size={24} /></div>
+                      <p className="text-sm font-medium">{file.name}</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-neutral-100 rounded-full text-neutral-600"><UploadCloud size={24} /></div>
+                      <p className="text-sm font-medium">Click or drag file here</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Price (USDC)</label>
+                  <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Recipient Address</label>
+                  <input type="text" value={recipientAddress} onChange={(e) => setRecipientAddress(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="0x..." />
+                </div>
+              </div>
+
+              <button onClick={handleCreateLink} disabled={!file || !price || !recipientAddress || isUploading} className="w-full flex justify-center gap-2 bg-black text-white py-3 rounded-lg font-semibold disabled:opacity-50">
+                {isUploading ? "Encrypting..." : <><LinkIcon size={16} /> Create Gated Link</>}
+              </button>
+            </div>
+          ) : (
+            <div className="p-6 space-y-4 text-center flex flex-col items-center">
+              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white"><FileCheck2 size={24} /></div>
+              <h2 className="text-xl font-bold">Links Created!</h2>
+              
+              <div className="w-full space-y-1.5">
+                <div className="flex justify-between px-1"><span className="text-xs font-semibold">🧑 Human Pay</span></div>
+                <div className="relative">
+                  <input type="text" readOnly value={humanUrl} className="w-full bg-neutral-50 border py-2.5 pl-3 pr-16 text-xs" />
+                  <button onClick={() => copyUrl("human")} className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black text-white text-[10px] px-2.5 py-1.5 rounded-md">Copy</button>
+                </div>
+              </div>
+
+              <div className="w-full space-y-1.5">
+                <div className="flex justify-between px-1"><span className="text-xs font-semibold">🤖 Agent Pay</span></div>
+                <div className="relative">
+                  <input type="text" readOnly value={agentUrl} className="w-full bg-neutral-50 border py-2.5 pl-3 pr-16 text-xs" />
+                  <button onClick={() => copyUrl("agent")} className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black text-white text-[10px] px-2.5 py-1.5 rounded-md">Copy</button>
+                </div>
+              </div>
+
+              <button onClick={handleReset} className="text-neutral-500 hover:text-black text-xs font-medium pt-2">Upload another file</button>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
 }
 ```
 
@@ -390,54 +497,148 @@ Since web browsers don't understand HTTP 402, we need a frontend page that asks 
 
 Create `app/download/[id]/page.tsx` and start with the core logic:
 
-```typescript
+```tsx
 // filepath: app/download/[id]/page.tsx
 "use client";
 
-import { createWalletClient, custom, parseUnits } from "viem";
-import { signAuthorization, encodePaymentSignatureHeader, createPaymentPayload, getViemChain } from "@injectivelabs/x402";
+import { useEffect, useState } from "react";
+import { createWalletClient, createPublicClient, custom, http, parseUnits, type Chain } from "viem";
+import { createNonce, signAuthorization, encodePaymentSignatureHeader, createPaymentPayload, getViemChain, TOKENS } from "@injectivelabs/x402";
+import { FileText, Wallet, Lock, CheckCircle, Loader2, AlertCircle } from "lucide-react";
 
-// ... (UI Component Setup goes here) ...
+const INJECTIVE_NETWORKS: Record<string, { chainId: number; chain: Chain; rpcUrl: string }> = {
+  "eip155:1439": { chainId: 1439, chain: getViemChain("eip155:1439"), rpcUrl: "https://k8s.testnet.json-rpc.injective.network" },
+};
 
-async function payAndDownload() {
-  // 1. Setup Viem Wallet Client
-  const walletClient = createWalletClient({
-    account,
-    chain: getViemChain("eip155:1439"), // Injective Testnet
-    transport: custom((window as any).ethereum),
-  });
+type Step = "idle" | "switching" | "connecting" | "signing" | "verifying" | "done" | "error";
 
-  // 2. Build the EIP-3009 Authorization
-  const auth = {
-    from: account,
-    to: meta.recipientAddress,
-    value: parseUnits(meta.price, 6),
-    validAfter: now - 60n,
-    validBefore: now + 300n,
-    nonce: createNonce(),
-  };
+interface FileMeta {
+  id: string; filename: string; mimeType: string; size: number; price: string; assetAddress: `0x${string}`; recipientAddress: `0x${string}`; network: string;
+}
 
-  // 3. Request Signature from Wallet (MetaMask)
-  const signature = await signAuthorization(
-    walletClient, meta.assetAddress, "USDC", 1439, auth, "2"
+export default function DownloadPage({ params }: { params: Promise<{ id: string }> }) {
+  const [id, setId] = useState<string | null>(null);
+  const [meta, setMeta] = useState<FileMeta | null>(null);
+  const [step, setStep] = useState<Step>("idle");
+  const [error, setError] = useState("");
+  const [account, setAccount] = useState<`0x${string}` | null>(null);
+
+  useEffect(() => { params.then(({ id }) => setId(id)); }, [params]);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch(`/api/download/${id}/info`).then((r) => r.json()).then((data) => {
+      if (data.error) setError("File not found."); else setMeta(data);
+    }).catch(() => setError("File not found."));
+  }, [id]);
+
+  async function connectWallet() {
+    if (!(window as any).ethereum) return setError("No wallet detected. Install MetaMask.");
+    if (!meta) return;
+    setError("");
+
+    try {
+      setStep("switching");
+      const hexChainId = `0x${INJECTIVE_NETWORKS[meta.network].chainId.toString(16)}`;
+      
+      try {
+        await (window as any).ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hexChainId }] });
+      } catch (err: any) {
+        if (err.code === 4902 || err.code === -32603) {
+          await (window as any).ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{ chainId: hexChainId, chainName: "Injective Testnet", rpcUrls: [INJECTIVE_NETWORKS[meta.network].rpcUrl], nativeCurrency: { name: "INJ", symbol: "INJ", decimals: 18 } }],
+          });
+        } else throw err;
+      }
+
+      setStep("connecting");
+      const [addr] = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+      setAccount(addr as `0x${string}`);
+      setStep("idle");
+    } catch (e: any) {
+      setError(e.message || "Wallet connection failed");
+      setStep("error");
+    }
+  }
+
+  async function payAndDownload() {
+    if (!meta || !account || !id) return;
+    setError("");
+    const networkCfg = INJECTIVE_NETWORKS[meta.network];
+
+    try {
+      setStep("signing");
+      const walletClient = createWalletClient({ account, chain: networkCfg.chain, transport: custom((window as any).ethereum) });
+      const publicClient = createPublicClient({ chain: networkCfg.chain, transport: http(networkCfg.rpcUrl) });
+
+      const networkTokens = TOKENS[meta.network as keyof typeof TOKENS] ?? {};
+      const tokenEntry = Object.values(networkTokens).find((t: any) => t.address.toLowerCase() === meta.assetAddress.toLowerCase()) as any;
+      const tokenName = tokenEntry?.name ?? "USDC";
+      const tokenVersion = tokenEntry?.eip712Version ?? "2";
+
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const auth = {
+        from: account, to: meta.recipientAddress, value: parseUnits(meta.price, 6),
+        validAfter: now - 60n, validBefore: now + 300n, nonce: createNonce(),
+      };
+
+      const signature = await signAuthorization(walletClient, meta.assetAddress, tokenName, networkCfg.chainId, auth, tokenVersion);
+
+      setStep("verifying");
+      const requirements = { scheme: "exact" as const, network: meta.network, asset: meta.assetAddress, amount: Math.floor(parseFloat(meta.price) * 1_000_000).toString(), payTo: meta.recipientAddress, maxTimeoutSeconds: 60, extra: {} };
+
+      const paymentPayload = createPaymentPayload(requirements, { signature, authorization: { from: auth.from, to: auth.to, value: auth.value.toString(), validAfter: auth.validAfter.toString(), validBefore: auth.validBefore.toString(), nonce: auth.nonce } });
+      const paymentHeader = encodePaymentSignatureHeader(paymentPayload);
+
+      const response = await fetch(`/api/download/${id}`, { headers: { "PAYMENT-SIGNATURE": paymentHeader } });
+      if (!response.ok) throw new Error(`Server error ${response.status}`);
+
+      setStep("done");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = meta.filename; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      setError(e.message || "Something went wrong");
+      setStep("error");
+    }
+  }
+
+  if (!meta) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+
+  return (
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden p-6 space-y-6">
+        
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Pay to Download</h1>
+        </div>
+
+        <div className="flex items-start gap-4 p-4 bg-neutral-50 rounded-xl">
+          <FileText size={24} className="text-neutral-600" />
+          <div>
+            <p className="text-sm font-semibold">{meta.filename}</p>
+            <p className="text-xs text-neutral-500">{(meta.size / 1024 / 1024).toFixed(2)} MB</p>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center px-2">
+          <span className="text-sm text-neutral-500">Price</span>
+          <span className="text-2xl font-bold">${meta.price} <span className="text-sm font-normal text-neutral-500">USDC</span></span>
+        </div>
+
+        {step === "done" ? (
+          <div className="flex justify-center gap-2 text-sm font-semibold py-3"><CheckCircle size={18} /> File downloaded!</div>
+        ) : (
+          <button onClick={account ? payAndDownload : connectWallet} disabled={step !== "idle"} className="w-full flex justify-center gap-2 bg-black text-white font-semibold py-3 rounded-lg disabled:opacity-60">
+            {step === "idle" ? (account ? <><Lock size={16}/> Pay & Download</> : <><Wallet size={16}/> Connect Wallet</>) : <><Loader2 size={16} className="animate-spin" /> Processing...</>}
+          </button>
+        )}
+      </div>
+    </div>
   );
-
-  // 4. Build x402 Header
-  const paymentPayload = createPaymentPayload(requirements, { signature, authorization: auth });
-  const paymentHeader = encodePaymentSignatureHeader(paymentPayload);
-
-  // 5. Fetch File with Payment Attached
-  const response = await fetch(`/api/download/${id}`, {
-    headers: { "PAYMENT-SIGNATURE": paymentHeader },
-  });
-
-  // 6. Trigger Browser Download
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = meta.filename;
-  a.click();
 }
 ```
 
