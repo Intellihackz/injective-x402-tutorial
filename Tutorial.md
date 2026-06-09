@@ -206,6 +206,9 @@ Now that we have our base UI, let's make it interactive. We need React state to 
 
 Update `app/page.tsx` to include our hooks and the network constants:
 
+<details>
+<summary>Click to view the full <code>app/page.tsx</code> code</summary>
+
 ```tsx
 // filepath: app/page.tsx
 "use client";
@@ -360,6 +363,7 @@ export default function Home() {
   );
 }
 ```
+</details>
 
 We now have the data ready to be sent to our server.
 
@@ -496,6 +500,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 Since web browsers don't understand HTTP 402, we need a frontend page that asks the user to connect their wallet and sign the EIP-3009 message. 
 
 Create `app/download/[id]/page.tsx` and start with the core logic:
+
+<details>
+<summary>Click to view the full <code>app/download/[id]/page.tsx</code> code</summary>
 
 ```tsx
 // filepath: app/download/[id]/page.tsx
@@ -641,6 +648,7 @@ export default function DownloadPage({ params }: { params: Promise<{ id: string 
   );
 }
 ```
+</details>
 
 The buyer is not sending a transaction themselves—they are just signing a message.
 
