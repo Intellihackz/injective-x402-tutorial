@@ -17,7 +17,6 @@ Don't worry if you've never worked with the x402 protocol or Injective before - 
 * [Creating the Download API (Facilitator)](#creating-the-download-api-facilitator)
 * [Building the Download UI](#building-the-download-ui)
 * [Wiring the Download Logic](#wiring-the-download-logic)
-* [Testing the Agent Flow](#testing-the-agent-flow)
 * [Conclusion](#conclusion)
 
 ## Prerequisites
@@ -76,7 +75,7 @@ One of the most unique features of this platform is how payments are handled. We
 
 When the internet was built, HTTP status code `404` meant "Not Found", and `402` was reserved for "Payment Required". The x402 protocol finally makes this a reality for Web3.
 
-When an AI Agent or a script tries to download a file from our API, the server responds with a `402 Payment Required` code and a JSON payload outlining exactly how much USDC it costs, what network to use, and where to send it. The agent can then automatically make the payment, sign it, and request the file again.
+When an AI Agent or a script tries to download a file from our API, the server responds with a `402 Payment Required` code and a JSON payload outlining exactly how much USDC it costs, what network to use, and where to send it. The agent can then automatically make the payment, sign it, and request the file again. You can read more about building on Injective in the [official documentation](https://docs.injective.network).
 
 ### What is EIP-3009?
 
@@ -572,24 +571,6 @@ For the full, runnable code of this page with all the UI components and wallet c
 
 ---
 
-## Testing the Agent Flow
-
-The best part about x402 is that it's machine-readable. We can test the programmatic AI Agent flow using a simple script.
-
-Add a buyer wallet to your `.env.local`:
-```env
-TEST_CLIENT_PRIVATE_KEY=0xYOUR_TEST_PAYER_PRIVATE_KEY
-```
-
-Then run the test client against a generated agent URL:
-```bash
-npx tsx scripts/test-download.ts http://localhost:3000/api/download/<file-id>
-```
-
-The script will hit the 402, parse the JSON, sign the transaction, resubmit, and save the decrypted file automatically!
-
----
-
 ## Conclusion
 
 Congratulations! 🎉 You've successfully built a Pay-to-Unlock platform using Injective EVM and the x402 protocol.
@@ -601,3 +582,4 @@ You now have an application that:
 - Fully supports machine-to-machine commerce, bridging the gap between human users and autonomous AI Agents.
 
 Happy building!
+
