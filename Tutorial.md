@@ -27,6 +27,24 @@ We are building an application with two parts:
 
 ---
 
+## Understanding Injective x402
+
+Before we write code, it's important to understand *why* we are using the x402 protocol and what makes it so powerful.
+
+### What is x402?
+x402 is a decentralized protocol built on top of the classic **HTTP 402 Payment Required** status code. Traditionally, when you hit a paywall on the internet, you are redirected to a credit card form. x402 replaces that form with a standardized, machine-readable crypto payment challenge.
+
+### Built for AI Agents and Machines
+Because x402 is an API standard, it's not just for humans clicking buttons in a browser. **Autonomous AI Agents** can natively understand x402. When an agent hits an x402-protected endpoint, it reads the required token and price from the JSON response, uses its wallet to sign the payment authorization, and programmatically unlocks the file—all without any human intervention.
+
+### Gasless EIP-3009 Payments
+To make the payment flow frictionless, x402 utilizes **EIP-3009 (Transfer With Authorization)**. 
+Instead of the user initiating an on-chain transaction (which costs INJ gas and requires waiting for blocks), the user simply *signs a message* off-chain granting permission to move the tokens. 
+
+Our Express Server (acting as the **Facilitator**) takes this signature, verifies it off-chain, and then executes the transaction on Injective itself. This means your users don't need INJ gas to buy content—they just need the purchase token (like USDC)!
+
+---
+
 ## Project Setup
 
 We'll use a monorepo-style structure with `server/` and `client/` directories.
