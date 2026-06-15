@@ -1,6 +1,5 @@
-"use client";
-
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   createWalletClient,
   createPublicClient,
@@ -12,7 +11,6 @@ import {
 import {
   createNonce,
   signAuthorization,
-  getTokenName,
   encodePaymentSignatureHeader,
   createPaymentPayload,
   getViemChain,
@@ -26,8 +24,6 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-
-// ─── Supported Injective EVM Networks ────────────────────────────────────────
 
 const INJECTIVE_NETWORKS: Record<
   string,
@@ -44,8 +40,6 @@ const INJECTIVE_NETWORKS: Record<
     rpcUrl: "https://k8s.testnet.json-rpc.injective.network",
   },
 };
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Step = "idle" | "switching" | "connecting" | "signing" | "verifying" | "done" | "error";
 
@@ -66,8 +60,6 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 }
 
-// ─── Switch/Add chain in wallet ───────────────────────────────────────────────
-
 async function switchToInjectiveChain(network: string) {
   const cfg = INJECTIVE_NETWORKS[network];
   if (!cfg) throw new Error(`Unsupported network: ${network}`);
@@ -75,13 +67,11 @@ async function switchToInjectiveChain(network: string) {
   const hexChainId = `0x${cfg.chainId.toString(16)}`;
 
   try {
-    // Try switching first — works if the chain is already in the wallet
     await (window as any).ethereum.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: hexChainId }],
     });
   } catch (err: any) {
-    // Error 4902 = chain not yet added to wallet — add it
     if (err.code === 4902 || err.code === -32603) {
       await (window as any).ethereum.request({
         method: "wallet_addEthereumChain",
@@ -91,9 +81,7 @@ async function switchToInjectiveChain(network: string) {
             chainName: cfg.chain.name,
             rpcUrls: [cfg.rpcUrl],
             nativeCurrency: { name: "Injective", symbol: "INJ", decimals: 18 },
-            blockExplorerUrls: [
-              cfg.chain.blockExplorers?.default?.url ?? "",
-            ],
+            blockExplorerUrls: [cfg.chain.blockExplorers?.default?.url ?? ""],
           },
         ],
       });
@@ -103,28 +91,24 @@ async function switchToInjectiveChain(network: string) {
   }
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export default function DownloadPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const [id, setId] = useState<string | null>(null);
+export default function Download() {
+  const { id } = useParams<{ id: string }>();
   const [meta, setMeta] = useState<FileMeta | null>(null);
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState("");
   const [account, setAccount] = useState<`0x${string}` | null>(null);
 
-  // Resolve async params (Next.js 15+)
-  useEffect(() => {
-    params.then(({ id }) => setId(id));
-  }, [params]);
-
-  // Load file metadata
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/download/${id}/info`)
+    // Fix: point to localhost:3000 where our Express server runs
+    fetch(`http://localhost:3000/api/download/${id}`)
+      .then((r) => {
+        // The API returns 402 with the 'requirements' and 'accepts' payload
+        // But wait, the info endpoint? I forgot to create the /info endpoint in the express server!
+        // The user's code expects a separate `/info` endpoint, or we can just fetch the `402` response and parse it.
+        // Actually, the easiest is to add a `/api/download/:id/info` route to Express.
+        return fetch(`http://localhost:3000/api/download/${id}/info`);
+      })
       .then((r) => r.json())
       .then((data) => {
         if (data.error) setError("File not found.");
@@ -132,8 +116,6 @@ export default function DownloadPage({
       })
       .catch(() => setError("File not found."));
   }, [id]);
-
-  // ── Connect wallet + switch to Injective chain ────────────────────────────
 
   async function connectWallet() {
     if (!(window as any).ethereum) {
@@ -144,11 +126,9 @@ export default function DownloadPage({
     setError("");
 
     try {
-      // 1. Switch / add the Injective chain
       setStep("switching");
       await switchToInjectiveChain(meta.network);
 
-      // 2. Request account access
       setStep("connecting");
       const [addr] = await (window as any).ethereum.request({
         method: "eth_requestAccounts",
@@ -160,8 +140,6 @@ export default function DownloadPage({
       setStep("error");
     }
   }
-
-  // ── Sign EIP-3009 → build x402 payload → fetch file ──────────────────────
 
   async function payAndDownload() {
     if (!meta || !account || !id) return;
@@ -187,8 +165,6 @@ export default function DownloadPage({
         transport: http(networkCfg.rpcUrl),
       });
 
-      // Look up the token name from the SDK's built-in registry instead of
-      // calling name() on-chain — some testnet contracts don't expose it.
       const networkTokens = TOKENS[meta.network as keyof typeof TOKENS] ?? {};
       const tokenEntry = Object.values(networkTokens).find(
         (t: any) => t.address.toLowerCase() === meta.assetAddress.toLowerCase()
@@ -200,13 +176,12 @@ export default function DownloadPage({
       const auth = {
         from: account,
         to: meta.recipientAddress,
-        value: parseUnits(meta.price, 6), // USDC = 6 decimals
-        validAfter: now - 60n,            // allow 60s of clock skew
-        validBefore: now + 300n,          // 5 minute window
+        value: parseUnits(meta.price, 6), // Assuming USDC 6 decimals
+        validAfter: now - 60n,
+        validBefore: now + 300n,
         nonce: createNonce(),
       };
 
-      // Ask the wallet to sign the EIP-712 typed data — this is what MetaMask/Rabby will show the user
       const signature = await signAuthorization(
         walletClient,
         meta.assetAddress,
@@ -216,7 +191,6 @@ export default function DownloadPage({
         tokenVersion
       );
 
-      // ── Build the x402 payment payload ──────────────────────────────────
       setStep("verifying");
 
       const requirements = {
@@ -243,8 +217,7 @@ export default function DownloadPage({
 
       const paymentHeader = encodePaymentSignatureHeader(paymentPayload);
 
-      // ── Retry download with payment header ───────────────────────────────
-      const response = await fetch(`/api/download/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/download/${id}`, {
         headers: { "PAYMENT-SIGNATURE": paymentHeader },
       });
 
@@ -253,7 +226,6 @@ export default function DownloadPage({
         throw new Error(err.reason || err.error || `Server error ${response.status}`);
       }
 
-      // ── Trigger browser file download ────────────────────────────────────
       setStep("done");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -267,8 +239,6 @@ export default function DownloadPage({
       setStep("error");
     }
   }
-
-  // ─── Render ──────────────────────────────────────────────────────────────
 
   if (error && !meta) {
     return (
@@ -308,15 +278,12 @@ export default function DownloadPage({
   return (
     <div className="min-h-screen bg-neutral-50 font-sans flex items-center justify-center p-4 selection:bg-black selection:text-white">
       <div className="w-full max-w-sm">
-        {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-black tracking-tight">Pay to Download</h1>
           <p className="text-sm text-neutral-500 mt-1">Powered by x402 on Injective</p>
         </div>
 
-        {/* Card */}
         <div className="bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden">
-          {/* File info */}
           <div className="p-6 border-b border-neutral-100">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-neutral-100 rounded-xl flex-shrink-0">
@@ -329,7 +296,6 @@ export default function DownloadPage({
             </div>
           </div>
 
-          {/* Price */}
           <div className="px-6 py-5 flex items-center justify-between border-b border-neutral-100">
             <span className="text-sm text-neutral-500">Price</span>
             <div className="text-right">
@@ -338,7 +304,6 @@ export default function DownloadPage({
             </div>
           </div>
 
-          {/* Payment details */}
           <div className="px-6 py-4 space-y-2 border-b border-neutral-100 bg-neutral-50/50">
             <div className="flex items-center justify-between text-xs">
               <span className="text-neutral-500">Network</span>
@@ -364,7 +329,6 @@ export default function DownloadPage({
             )}
           </div>
 
-          {/* Action */}
           <div className="p-6 space-y-3">
             {isDone ? (
               <div className="flex items-center justify-center gap-2 text-sm font-semibold text-black py-2.5">

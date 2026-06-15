@@ -1,13 +1,9 @@
-"use client";
-
 import { useState } from "react";
 import { UploadCloud, Link as LinkIcon, FileCheck2, ShieldCheck, Coins } from "lucide-react";
 
-// USDC on Injective EVM
-// Mainnet (eip155:1776): 0xa00C59fF5a080D2b954d0c75e46E22a0c371235a
-// Testnet (eip155:1439): 0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d
-const USDC_ADDRESS = "0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d" as `0x${string}`;
-const NETWORK = "eip155:1439"; // Switch to eip155:1776 for mainnet
+// Testnet USDC address and Chain ID
+const TOKEN_ADDRESS = "0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d" as `0x${string}`;
+const NETWORK = "eip155:1439";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -51,10 +47,10 @@ export default function Home() {
       formData.append("file", file);
       formData.append("price", price);
       formData.append("recipientAddress", recipientAddress);
-      formData.append("assetAddress", USDC_ADDRESS);
+      formData.append("assetAddress", TOKEN_ADDRESS);
       formData.append("network", NETWORK);
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch("http://localhost:3000/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -63,7 +59,7 @@ export default function Home() {
       const data = await res.json();
       
       setHumanUrl(`${window.location.origin}/download/${data.fileId}`);
-      setAgentUrl(`${window.location.origin}/api/download/${data.fileId}`);
+      setAgentUrl(`http://localhost:3000/api/download/${data.fileId}`);
     } catch (error) {
       console.error(error);
       alert("Failed to upload and encrypt file.");
@@ -185,8 +181,6 @@ export default function Home() {
                     />
                   </div>
                 </div>
-
-
 
                 <div className="flex items-center gap-2 text-xs text-neutral-600 bg-neutral-50 p-2.5 rounded-lg border border-neutral-100">
                   <ShieldCheck size={16} className="text-black flex-shrink-0" />
