@@ -20,37 +20,24 @@ We are building an application with two parts:
 
 ## Understanding Injective x402
 
-### What is x402?
-x402 embeds payment into the HTTP protocol, where the server demands and collects payment as part of the API response cycle, before returning data.
+Before diving into the code, let's briefly look at how x402 works under the hood.
 
-### What happens in an x402 interaction?
-When a client calls an x402-gated HTTP endpoint, the exchange follows these steps:
-1. Client sends a normal HTTP request to the API endpoint.
-2. Server responds with `402 Payment Required` and a price quote.
-3. Client signs a USDC transfer transaction, but the transaction is not yet broadcast to the network.
-4. An x402 facilitator submits the signed payment to the blockchain and awaits confirmation.
-5. Client retries the original request, this time including the details of the completed payment.
-6. Server verifies the receipt via the facilitator and returns the requested data.
+### The x402 Flow
+x402 embeds crypto payments natively into the HTTP protocol. Instead of managing API keys, prior registrations, or credit card subscriptions, a server can simply demand payment on the fly:
+
+1. A client requests an API endpoint.
+2. The server responds with a `402 Payment Required` status and a price quote.
+3. The client signs an off-chain transaction (e.g., a USDC transfer).
+4. An **x402 Facilitator** submits this signature to the blockchain.
+5. The client retries the request with the payment receipt, and the server delivers the data.
 
 ![x402 interaction steps](https://mintcdn.com/injectivelabs/QW0WWCmSlMi8lO1R/img/x402-demo-interaction-steps.png?w=1100&fit=max&auto=format&n=QW0WWCmSlMi8lO1R&q=85&s=26ae8c109f5388904a950c5c397b1086)
 
-### What does x402 avoid?
-Prior registration, API key management, subscriptions, or credit cards; none of these are needed. This means that a server can quote, verify payment, and deliver in a single HTTP conversation.
+### The Magic of the Facilitator
+The beauty of x402 is that it keeps your API server entirely web-native. The Facilitator handles all the blockchain complexity—including cryptographic validation, RPC endpoint management, gas estimation, and block polling—abstracting it entirely away from the core server logic.
 
-The facilitator handles all blockchain interaction, keeping your API server web native:
-
-| Facilitator responsibility | What it abstracts away |
-| -------------------------- | ---------------------- |
-| Verifying payment signatures | Cryptographic validation code in your server |
-| Submitting transactions to the chain | RPC endpoint management |
-| Gas estimation and fees | Gas calculation logic |
-| Awaiting on-chain confirmation | Block polling: You receive a yes/no |
-
-### Is x402 only for Ethereum?
-x402 is network-neutral: The open standard supports EVM-compatible networks, SVM-compatible networks, and others. This tutorial shows you how to use x402 on Injective.
-
-### Why use x402 on Injective?
-Injective has a very high throughput and low latency, as it has a block time of approximately 650ms, and deterministic single-block finality. This means that x402 payments can settle about as fast as credit card payments, but at a fraction of the cost. This opens up new use cases, including pay-per-use, and micro-transactions. Since x402 transactions are fully programmatic as well, they are a natural fit for AI agents.
+### Why Injective?
+While x402 is an open standard that supports many networks, it is especially powerful on Injective. With ~650ms block times and deterministic single-block finality, x402 payments settle as fast as credit cards but at a fraction of the cost. This makes it the perfect fit for micro-transactions, pay-per-use APIs, and autonomous AI agents.
 
 ---
 
