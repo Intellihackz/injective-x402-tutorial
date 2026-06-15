@@ -2,15 +2,6 @@
 
 Welcome! In this tutorial, we're going to build a fully functional token-gated content platform on Injective EVM. By the end, you'll have written an Express backend, built a sleek React frontend using Vite, and connected everything together into a production-ready DApp where creators can upload encrypted files and sell them directly for tokens—all while fully supporting autonomous AI agents.
 
-## The Tutorial Series
-
-This tutorial is split into manageable sections:
-
-1. **[Part 1: Building the Server](Tutorial-Server.md)** - Setting up Express, the Encryption Utility, and the x402 Facilitator.
-2. **[Part 2: Building the Frontend](Tutorial-Frontend.md)** - Building the Vite+React Upload UI and the gasless Download UI.
-
----
-
 ## Prerequisites
 
 Before we dive in, let's make sure you have everything you need:
