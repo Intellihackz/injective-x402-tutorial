@@ -29,19 +29,37 @@ We are building an application with two parts:
 
 ## Understanding Injective x402
 
-Before we write code, it's important to understand *why* we are using the x402 protocol and what makes it so powerful.
-
 ### What is x402?
-x402 is a decentralized protocol built on top of the classic **HTTP 402 Payment Required** status code. Traditionally, when you hit a paywall on the internet, you are redirected to a credit card form. x402 replaces that form with a standardized, machine-readable crypto payment challenge.
+x402 embeds payment into the HTTP protocol, where the server demands and collects payment as part of the API response cycle, before returning data.
 
-### Built for AI Agents and Machines
-Because x402 is an API standard, it's not just for humans clicking buttons in a browser. **Autonomous AI Agents** can natively understand x402. When an agent hits an x402-protected endpoint, it reads the required token and price from the JSON response, uses its wallet to sign the payment authorization, and programmatically unlocks the file—all without any human intervention.
+### What happens in an x402 interaction?
+When a client calls an x402-gated HTTP endpoint, the exchange follows these steps:
+1. Client sends a normal HTTP request to the API endpoint.
+2. Server responds with `402 Payment Required` and a price quote.
+3. Client signs a USDC transfer transaction, but the transaction is not yet broadcast to the network.
+4. An x402 facilitator submits the signed payment to the blockchain and awaits confirmation.
+5. Client retries the original request, this time including the details of the completed payment.
+6. Server verifies the receipt via the facilitator and returns the requested data.
 
-### Gasless EIP-3009 Payments
-To make the payment flow frictionless, x402 utilizes **EIP-3009 (Transfer With Authorization)**. 
-Instead of the user initiating an on-chain transaction (which costs INJ gas and requires waiting for blocks), the user simply *signs a message* off-chain granting permission to move the tokens. 
+![x402 interaction steps](https://mintcdn.com/injectivelabs/QW0WWCmSlMi8lO1R/img/x402-demo-interaction-steps.png?w=1100&fit=max&auto=format&n=QW0WWCmSlMi8lO1R&q=85&s=26ae8c109f5388904a950c5c397b1086)
 
-Our Express Server (acting as the **Facilitator**) takes this signature, verifies it off-chain, and then executes the transaction on Injective itself. This means your users don't need INJ gas to buy content—they just need the purchase token (like USDC)!
+### What does x402 avoid?
+Prior registration, API key management, subscriptions, or credit cards; none of these are needed. This means that a server can quote, verify payment, and deliver in a single HTTP conversation.
+
+The facilitator handles all blockchain interaction, keeping your API server web native:
+
+| Facilitator responsibility | What it abstracts away |
+| -------------------------- | ---------------------- |
+| Verifying payment signatures | Cryptographic validation code in your server |
+| Submitting transactions to the chain | RPC endpoint management |
+| Gas estimation and fees | Gas calculation logic |
+| Awaiting on-chain confirmation | Block polling: You receive a yes/no |
+
+### Is x402 only for Ethereum?
+x402 is network-neutral: The open standard supports EVM-compatible networks, SVM-compatible networks, and others. This tutorial shows you how to use x402 on Injective.
+
+### Why use x402 on Injective?
+Injective has a very high throughput and low latency, as it has a block time of approximately 650ms, and deterministic single-block finality. This means that x402 payments can settle about as fast as credit card payments, but at a fraction of the cost. This opens up new use cases, including pay-per-use, and micro-transactions. Since x402 transactions are fully programmatic as well, they are a natural fit for AI agents.
 
 ---
 
