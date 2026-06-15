@@ -6,8 +6,8 @@ import fs from "fs/promises";
 import path from "path";
 import dotenv from "dotenv";
 import { decodePaymentSignatureHeader } from "@injectivelabs/x402";
-import { encryptFile, decryptFile } from "./utils/encryption";
-import { getFacilitator } from "./utils/facilitator";
+import { encryptFile, decryptFile } from "./utils/encryption.js";
+import { getFacilitator } from "./utils/facilitator.js";
 
 dotenv.config();
 
@@ -108,11 +108,12 @@ app.get("/api/download/:id", async (req, res) => {
 
     // 4. Verify & Settle On-Chain
     const paymentPayload = decodePaymentSignatureHeader(signatureHeader);
-    const verifyResult = await facilitator.verify(paymentPayload, requirements);
+    const verifyResult = await facilitator.verify({
+      paymentPayload,
+      paymentRequirements: requirements
+    });
 
-    if (!verifyResult.success) {
-      return res.status(402).json({ error: "Payment invalid" });
-    }
+    if (!verifyResult.isValid) return res.status(402).json({ error: "Payment invalid" });
 
     await facilitator.settle({
       paymentPayload,

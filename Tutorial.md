@@ -247,9 +247,9 @@ app.get("/api/download/:id", async (req, res) => {
     }
 
     const paymentPayload = decodePaymentSignatureHeader(signatureHeader);
-    const verifyResult = await facilitator.verify(paymentPayload, requirements);
+    const verifyResult = await facilitator.verify({ paymentPayload, paymentRequirements: requirements });
 
-    if (!verifyResult.success) return res.status(402).json({ error: "Payment invalid" });
+    if (!verifyResult.isValid) return res.status(402).json({ error: "Payment invalid" });
 
     await facilitator.settle({ paymentPayload, paymentRequirements: requirements });
 
