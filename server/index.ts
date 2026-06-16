@@ -122,6 +122,11 @@ app.get("/api/download/:id", async (req, res) => {
       paymentRequirements: requirements,
     });
     
+    console.log("Settle result:", settleResult);
+    if (!settleResult.success) {
+      return res.status(500).json({ error: `Settlement failed: ${settleResult.errorReason} - ${settleResult.errorMessage}` });
+    }
+    
     const txHash = settleResult.transaction || "unknown";
     console.log(`Payment settled successfully! TX Hash: ${txHash}`);
     res.setHeader("x-transaction-hash", txHash);
