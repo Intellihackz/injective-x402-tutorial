@@ -122,7 +122,7 @@ app.get("/api/download/:id", async (req, res) => {
       paymentRequirements: requirements,
     });
     
-    const txHash = (settleResult as any)?.transactionHash || (settleResult as any)?.txHash || "unknown";
+    const txHash = settleResult.transaction || "unknown";
     console.log(`Payment settled successfully! TX Hash: ${txHash}`);
     res.setHeader("x-transaction-hash", txHash);
 
