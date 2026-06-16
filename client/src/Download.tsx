@@ -242,11 +242,11 @@ export default function Download() {
 
   if (error && !meta) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-neutral-200 rounded-2xl p-10 text-center shadow-xl max-w-sm w-full">
-          <AlertCircle className="mx-auto mb-4 text-neutral-400" size={40} />
-          <h2 className="text-lg font-bold text-black mb-2">File Not Found</h2>
-          <p className="text-sm text-neutral-500">{error}</p>
+      <div className="full-page-center">
+        <div className="error-card">
+          <AlertCircle size={40} className="error-icon" />
+          <h2 className="title-sm">File Not Found</h2>
+          <p className="subtitle">{error}</p>
         </div>
       </div>
     );
@@ -254,8 +254,8 @@ export default function Download() {
 
   if (!meta) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-neutral-400" size={32} />
+      <div className="full-page-center">
+        <div className="spinner dark"></div>
       </div>
     );
   }
@@ -276,62 +276,60 @@ export default function Download() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 font-sans flex items-center justify-center p-4 selection:bg-black selection:text-white">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-black tracking-tight">Pay to Download</h1>
-          <p className="text-sm text-neutral-500 mt-1">Powered by x402 on Injective</p>
+    <div className="app-container">
+      <main className="main-wrapper">
+        <div className="header">
+          <h1 className="title">Pay to Download</h1>
+          <p className="subtitle">Powered by x402 on Injective</p>
         </div>
 
-        <div className="bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-neutral-100">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-neutral-100 rounded-xl flex-shrink-0">
-                <FileText size={24} className="text-neutral-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-black truncate">{meta.filename}</p>
-                <p className="text-xs text-neutral-500 mt-0.5">{formatBytes(meta.size)}</p>
-              </div>
+        <div className="card">
+          <div className="meta-header">
+            <div className="file-icon">
+              <FileText size={24} />
+            </div>
+            <div className="meta-details">
+              <p className="meta-filename">{meta.filename}</p>
+              <p className="meta-size">{formatBytes(meta.size)}</p>
             </div>
           </div>
 
-          <div className="px-6 py-5 flex items-center justify-between border-b border-neutral-100">
-            <span className="text-sm text-neutral-500">Price</span>
-            <div className="text-right">
-              <span className="text-2xl font-bold text-black">${meta.price}</span>
-              <span className="text-sm text-neutral-500 ml-1.5">USDC</span>
+          <div className="price-row">
+            <span className="price-label">Price</span>
+            <div>
+              <span className="price-value">${meta.price}</span>
+              <span className="price-currency">USDC</span>
             </div>
           </div>
 
-          <div className="px-6 py-4 space-y-2 border-b border-neutral-100 bg-neutral-50/50">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Network</span>
-              <span className="font-medium text-black">{networkName}</span>
+          <div className="info-list">
+            <div className="info-row">
+              <span className="info-label">Network</span>
+              <span className="info-value">{networkName}</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Token</span>
-              <span className="font-medium text-black">USDC</span>
+            <div className="info-row">
+              <span className="info-label">Token</span>
+              <span className="info-value">USDC</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Recipient</span>
-              <span className="font-mono text-black">
+            <div className="info-row">
+              <span className="info-label">Recipient</span>
+              <span className="info-value info-mono">
                 {meta.recipientAddress.slice(0, 6)}…{meta.recipientAddress.slice(-4)}
               </span>
             </div>
             {account && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-neutral-500">Your wallet</span>
-                <span className="font-mono text-black">
+              <div className="info-row">
+                <span className="info-label">Your wallet</span>
+                <span className="info-value info-mono">
                   {account.slice(0, 6)}…{account.slice(-4)}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="p-6 space-y-3">
+          <div className="action-box">
             {isDone ? (
-              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-black py-2.5">
+              <div className="download-success">
                 <CheckCircle size={18} />
                 File downloaded!
               </div>
@@ -339,10 +337,10 @@ export default function Download() {
               <button
                 onClick={account ? payAndDownload : connectWallet}
                 disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 bg-black text-white text-sm font-semibold py-3 px-4 rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="button"
               >
                 {isLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <div className="spinner"></div>
                 ) : account ? (
                   <Lock size={16} />
                 ) : (
@@ -352,19 +350,15 @@ export default function Download() {
               </button>
             )}
 
-            {error && (
-              <p className="text-xs text-center text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
+            {error && <p className="error-msg">{error}</p>}
 
-            <p className="text-center text-[10px] text-neutral-400">
-              <Lock size={10} className="inline mr-1" />
+            <p className="footer-note">
+              <Lock size={10} />
               File decrypts server-side only after payment confirms on-chain.
             </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

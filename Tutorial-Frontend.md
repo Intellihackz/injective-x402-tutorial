@@ -6,10 +6,193 @@ If you haven't built the server yet, check out [Part 1: Building the Server](Tut
 
 ## Table of Contents
 
+* [Styling (index.css)](#styling-indexcss)
 * [App Routing](#app-routing)
 * [The Upload Interface](#the-upload-interface)
 * [The Download Interface](#the-download-interface)
 * [Testing the Agent Flow](#testing-the-agent-flow)
+
+---
+
+## Styling (`index.css`)
+
+Before we build the components, let's establish our clean, monochrome design system. 
+
+In `client/src/index.css`, replace the contents with the following:
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #111111;
+  --text-muted: #666666;
+  --border: #e0e0e0;
+  --accent: #000000;
+  --accent-text: #ffffff;
+  --radius: 12px;
+  --shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base Layout */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.main-wrapper {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Header */
+.header { text-align: center; margin-bottom: 3rem; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+}
+.title { font-size: 2.5rem; font-weight: 700; margin: 0 0 1rem; letter-spacing: -0.03em; }
+.subtitle { color: var(--text-muted); max-width: 480px; margin: 0 auto; }
+
+/* Card */
+.card {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Upload Zone */
+.card-content { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 3rem 2rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  background: var(--bg);
+  cursor: pointer;
+}
+.upload-zone:hover, .upload-zone.drag-active { border-color: var(--accent); background: var(--surface); }
+.upload-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.upload-icon { display: inline-flex; padding: 1rem; background: var(--bg); border-radius: 50%; color: var(--text-muted); margin-bottom: 1rem; transition: background 0.2s; }
+.upload-zone:hover .upload-icon { background: #f0f0f0; color: var(--accent); }
+.upload-zone.has-file .upload-icon { background: var(--accent); color: var(--surface); }
+.file-name { font-weight: 600; font-size: 0.9rem; margin: 0; color: var(--text); }
+.file-size { font-size: 0.75rem; color: var(--text-muted); margin: 0; }
+.upload-prompt { font-weight: 600; font-size: 0.9rem; margin: 0; color: var(--text); }
+.upload-subprompt { font-size: 0.75rem; color: var(--text-muted); margin: 0; margin-top: 0.25rem; }
+
+/* Forms */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.input-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+.input-wrapper { position: relative; display: flex; align-items: center; }
+.input-prefix { position: absolute; left: 1rem; color: var(--text-muted); font-size: 0.875rem; pointer-events: none; }
+.input-suffix { position: absolute; right: 1rem; color: var(--text-muted); font-size: 0.75rem; pointer-events: none; }
+.input {
+  width: 100%; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; font-family: var(--font-mono); font-size: 0.875rem;
+  transition: all 0.2s ease; outline: none; color: var(--text); box-sizing: border-box;
+}
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+.input.with-prefix { padding-left: 2rem; }
+.input.with-suffix { padding-right: 3rem; }
+
+/* Notice */
+.notice {
+  display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; font-size: 0.75rem; color: var(--text-muted);
+}
+.notice-icon { color: var(--accent); flex-shrink: 0; }
+
+/* Button */
+.button {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+  background: var(--accent); color: var(--accent-text); border: none; border-radius: 8px;
+  padding: 1rem; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+}
+.button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Spinners */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 1.25rem; height: 1.25rem; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner.dark { border-color: rgba(0,0,0,0.1); border-top-color: var(--accent); }
+
+/* Results */
+.result-view { padding: 3rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.success-icon { width: 4rem; height: 4rem; background: var(--accent); color: var(--surface); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
+.result-title { font-size: 1.5rem; font-weight: 700; margin: 0 0 0.5rem; }
+.result-subtitle { color: var(--text-muted); font-size: 0.875rem; margin: 0 0 2rem; max-width: 280px; }
+
+.link-box { width: 100%; text-align: left; margin-bottom: 1.5rem; }
+.link-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0 0.25rem; }
+.link-title { font-size: 0.75rem; font-weight: 600; color: var(--text); }
+.link-desc { font-size: 0.65rem; color: var(--text-muted); }
+.link-input-wrapper { position: relative; display: flex; }
+.link-input { width: 100%; background: var(--bg); border: 1px solid var(--border); padding: 0.75rem; padding-right: 4.5rem; border-radius: 8px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text); outline: none; box-sizing: border-box; }
+.copy-btn { position: absolute; right: 0.25rem; top: 0.25rem; bottom: 0.25rem; padding: 0 0.75rem; background: var(--accent); color: var(--surface); border: none; border-radius: 4px; font-size: 0.65rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+.copy-btn:hover { opacity: 0.8; }
+.reset-btn { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 500; cursor: pointer; text-decoration: underline; margin-top: 1rem; transition: color 0.2s; }
+.reset-btn:hover { color: var(--accent); }
+
+/* Download specific */
+.meta-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; gap: 1rem; align-items: center; }
+.file-icon { background: var(--bg); padding: 1rem; border-radius: 12px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+.meta-details { text-align: left; }
+.meta-filename { font-weight: 600; font-size: 1.1rem; margin: 0 0 0.25rem; }
+.meta-size { color: var(--text-muted); font-size: 0.875rem; margin: 0; }
+.price-row { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.price-label { color: var(--text-muted); font-size: 0.875rem; font-weight: 500; }
+.price-value { font-size: 2rem; font-weight: 700; color: var(--text); }
+.price-currency { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; margin-left: 0.25rem; }
+.info-list { padding: 1.5rem; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem; }
+.info-row { display: flex; justify-content: space-between; font-size: 0.75rem; }
+.info-label { color: var(--text-muted); }
+.info-value { font-weight: 500; color: var(--text); }
+.info-mono { font-family: var(--font-mono); }
+.action-box { padding: 1.5rem; }
+.footer-note { text-align: center; font-size: 0.65rem; color: var(--text-muted); margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; }
+.error-msg { text-align: center; font-size: 0.75rem; color: #d32f2f; background: #ffebee; border: 1px solid #ffcdd2; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+
+.download-success { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600; font-size: 1rem; padding: 0.5rem 0; color: var(--text); }
+.full-page-center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); padding: 2rem; text-align: center; }
+.error-card { background: var(--surface); padding: 3rem; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; box-shadow: var(--shadow); max-width: 400px; width: 100%; }
+.error-icon { color: var(--text-muted); margin-bottom: 1rem; display: inline-block; }
+.title-sm { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem; }
+```
 
 ---
 
@@ -132,118 +315,89 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans selection:bg-black selection:text-white flex items-center justify-center p-4">
-      <main className="w-full max-w-2xl flex flex-col items-center">
-        {/* Header */}
-        <div className="text-center space-y-3 mb-8">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-neutral-200 text-neutral-600 text-xs font-medium shadow-sm">
-            <Coins size={14} className="text-black" />
+    <div className="app-container">
+      <main className="main-wrapper">
+        <div className="header">
+          <div className="badge">
+            <Coins size={14} />
             <span>x402 on Injective</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-black">
-            Pay-to-Unlock Content
-          </h1>
-          <p className="text-sm text-neutral-500 max-w-lg mx-auto leading-relaxed">
+          <h1 className="title">Pay-to-Unlock Content</h1>
+          <p className="subtitle">
             Upload any file, set a price, and get a gated download URL. 
             When users pay, the file stream unlocks instantly.
           </p>
         </div>
 
-        {/* Main Card */}
-        <div className="w-full bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden">
+        <div className="card">
           {!humanUrl ? (
-            <div className="p-6 space-y-5">
-              {/* Upload Zone */}
+            <div className="card-content">
               <div 
-                className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 ease-in-out ${
-                  isDragging 
-                    ? "border-black bg-neutral-50" 
-                    : file 
-                      ? "border-neutral-300 bg-neutral-50/50" 
-                      : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50"
-                }`}
+                className={`upload-zone ${isDragging ? "drag-active" : ""} ${file ? "has-file" : ""}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
               >
                 <input 
                   type="file" 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="upload-input"
                   onChange={handleFileChange}
                 />
-                <div className="flex flex-col items-center gap-3 pointer-events-none">
-                  {file ? (
-                    <>
-                      <div className="p-2 bg-black rounded-full text-white">
-                        <FileCheck2 size={24} />
-                      </div>
-                      <div>
-                        <p className="text-black text-sm font-medium">{file.name}</p>
-                        <p className="text-xs text-neutral-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="p-3 bg-neutral-100 rounded-full text-neutral-600">
-                        <UploadCloud size={24} />
-                      </div>
-                      <div>
-                        <p className="text-black text-sm font-medium">Click or drag file here</p>
-                        <p className="text-xs text-neutral-500 mt-0.5">Any file up to 50MB</p>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {file ? (
+                  <>
+                    <div className="upload-icon"><FileCheck2 size={24} /></div>
+                    <p className="file-name">{file.name}</p>
+                    <p className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="upload-icon"><UploadCloud size={24} /></div>
+                    <p className="upload-prompt">Click or drag file here</p>
+                    <p className="upload-subprompt">Any file up to 50MB</p>
+                  </>
+                )}
               </div>
 
-              {/* Settings */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Price</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-neutral-400 text-sm">$</span>
-                      </div>
-                      <input
-                        type="number"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        className="block w-full pl-7 pr-16 py-2 bg-white border border-neutral-200 rounded-lg text-black placeholder-neutral-400 focus:ring-1 focus:ring-black focus:border-black transition-colors outline-none shadow-sm text-sm font-mono"
-                        placeholder="0.00"
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-neutral-400 text-xs font-sans">USDC</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Recipient Address</label>
+              <div className="form-row">
+                <div className="input-group">
+                  <label className="label">Price</label>
+                  <div className="input-wrapper">
+                    <span className="input-prefix">$</span>
                     <input
-                      type="text"
-                      value={recipientAddress}
-                      onChange={(e) => setRecipientAddress(e.target.value)}
-                      className="block w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-black placeholder-neutral-400 focus:ring-1 focus:ring-black focus:border-black transition-colors outline-none shadow-sm font-mono text-sm"
-                      placeholder="0x..."
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="input with-prefix with-suffix"
+                      placeholder="0.00"
                     />
+                    <span className="input-suffix">USDC</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-neutral-600 bg-neutral-50 p-2.5 rounded-lg border border-neutral-100">
-                  <ShieldCheck size={16} className="text-black flex-shrink-0" />
-                  <p>Files are encrypted at rest and unlocked only upon payment.</p>
+                <div className="input-group">
+                  <label className="label">Recipient Address</label>
+                  <input
+                    type="text"
+                    value={recipientAddress}
+                    onChange={(e) => setRecipientAddress(e.target.value)}
+                    className="input"
+                    placeholder="0x..."
+                  />
                 </div>
               </div>
 
-              {/* Action */}
+              <div className="notice">
+                <ShieldCheck size={16} className="notice-icon" />
+                <p>Files are encrypted at rest and unlocked only upon payment.</p>
+              </div>
+
               <button
                 onClick={handleCreateLink}
                 disabled={!file || !price || !recipientAddress || isUploading}
-                className="w-full flex items-center justify-center gap-2 bg-black text-white text-sm font-semibold py-2.5 px-4 rounded-lg hover:bg-neutral-800 transition-colors shadow-md shadow-black/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button"
               >
                 {isUploading ? (
-                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <div className="spinner"></div>
                 ) : (
                   <>
                     <LinkIcon size={16} />
@@ -253,65 +407,42 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            <div className="p-6 space-y-4 text-center flex flex-col items-center">
-              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center text-white shadow-lg shadow-black/10">
-                <FileCheck2 size={24} />
+            <div className="result-view">
+              <div className="success-icon">
+                <FileCheck2 size={28} />
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-black mb-1">Links Created!</h2>
-                <p className="text-neutral-500 text-xs max-w-[260px] mx-auto">
-                  Share either link. One is for humans, one is for AI agents.
-                </p>
-              </div>
+              <h2 className="result-title">Links Created!</h2>
+              <p className="result-subtitle">
+                Share either link. One is for humans, one is for AI agents.
+              </p>
 
-              {/* Human Pay */}
-              <div className="w-full space-y-1.5">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-semibold text-black">🧑 Human Pay</span>
-                  <span className="text-[10px] text-neutral-400">Browser + wallet</span>
+              <div className="link-box">
+                <div className="link-header">
+                  <span className="link-title">🧑 Human Pay</span>
+                  <span className="link-desc">Browser + wallet</span>
                 </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    readOnly
-                    value={humanUrl}
-                    className="w-full bg-neutral-50 border border-neutral-200 text-black rounded-lg py-2.5 pl-3 pr-16 outline-none font-mono text-xs shadow-inner"
-                  />
-                  <button
-                    onClick={() => copyUrl("human")}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black hover:bg-neutral-800 text-white text-[10px] font-medium px-2.5 py-1.5 rounded-md transition-colors"
-                  >
+                <div className="link-input-wrapper">
+                  <input type="text" readOnly value={humanUrl} className="link-input" />
+                  <button onClick={() => copyUrl("human")} className="copy-btn">
                     {copied === "human" ? "Copied!" : "Copy"}
                   </button>
                 </div>
               </div>
 
-              {/* Agent Pay */}
-              <div className="w-full space-y-1.5">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-xs font-semibold text-black">🤖 Agent Pay</span>
-                  <span className="text-[10px] text-neutral-400">x402 raw endpoint</span>
+              <div className="link-box">
+                <div className="link-header">
+                  <span className="link-title">🤖 Agent Pay</span>
+                  <span className="link-desc">x402 raw endpoint</span>
                 </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    readOnly
-                    value={agentUrl}
-                    className="w-full bg-neutral-50 border border-neutral-200 text-black rounded-lg py-2.5 pl-3 pr-16 outline-none font-mono text-xs shadow-inner"
-                  />
-                  <button
-                    onClick={() => copyUrl("agent")}
-                    className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black hover:bg-neutral-800 text-white text-[10px] font-medium px-2.5 py-1.5 rounded-md transition-colors"
-                  >
+                <div className="link-input-wrapper">
+                  <input type="text" readOnly value={agentUrl} className="link-input" />
+                  <button onClick={() => copyUrl("agent")} className="copy-btn">
                     {copied === "agent" ? "Copied!" : "Copy"}
                   </button>
                 </div>
               </div>
 
-              <button
-                onClick={handleReset}
-                className="text-neutral-500 hover:text-black text-xs font-medium transition-colors"
-              >
+              <button onClick={handleReset} className="reset-btn">
                 Upload another file
               </button>
             </div>
@@ -357,7 +488,6 @@ import {
   Wallet,
   Lock,
   CheckCircle,
-  Loader2,
   AlertCircle,
 } from "lucide-react";
 
@@ -570,11 +700,11 @@ export default function Download() {
 
   if (error && !meta) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-neutral-200 rounded-2xl p-10 text-center shadow-xl max-w-sm w-full">
-          <AlertCircle className="mx-auto mb-4 text-neutral-400" size={40} />
-          <h2 className="text-lg font-bold text-black mb-2">File Not Found</h2>
-          <p className="text-sm text-neutral-500">{error}</p>
+      <div className="full-page-center">
+        <div className="error-card">
+          <AlertCircle size={40} className="error-icon" />
+          <h2 className="title-sm">File Not Found</h2>
+          <p className="subtitle">{error}</p>
         </div>
       </div>
     );
@@ -582,8 +712,8 @@ export default function Download() {
 
   if (!meta) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="animate-spin text-neutral-400" size={32} />
+      <div className="full-page-center">
+        <div className="spinner dark"></div>
       </div>
     );
   }
@@ -604,62 +734,60 @@ export default function Download() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 font-sans flex items-center justify-center p-4 selection:bg-black selection:text-white">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-black tracking-tight">Pay to Download</h1>
-          <p className="text-sm text-neutral-500 mt-1">Powered by x402 on Injective</p>
+    <div className="app-container">
+      <main className="main-wrapper">
+        <div className="header">
+          <h1 className="title">Pay to Download</h1>
+          <p className="subtitle">Powered by x402 on Injective</p>
         </div>
 
-        <div className="bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-neutral-100">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-neutral-100 rounded-xl flex-shrink-0">
-                <FileText size={24} className="text-neutral-600" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-black truncate">{meta.filename}</p>
-                <p className="text-xs text-neutral-500 mt-0.5">{formatBytes(meta.size)}</p>
-              </div>
+        <div className="card">
+          <div className="meta-header">
+            <div className="file-icon">
+              <FileText size={24} />
+            </div>
+            <div className="meta-details">
+              <p className="meta-filename">{meta.filename}</p>
+              <p className="meta-size">{formatBytes(meta.size)}</p>
             </div>
           </div>
 
-          <div className="px-6 py-5 flex items-center justify-between border-b border-neutral-100">
-            <span className="text-sm text-neutral-500">Price</span>
-            <div className="text-right">
-              <span className="text-2xl font-bold text-black">${meta.price}</span>
-              <span className="text-sm text-neutral-500 ml-1.5">USDC</span>
+          <div className="price-row">
+            <span className="price-label">Price</span>
+            <div>
+              <span className="price-value">${meta.price}</span>
+              <span className="price-currency">USDC</span>
             </div>
           </div>
 
-          <div className="px-6 py-4 space-y-2 border-b border-neutral-100 bg-neutral-50/50">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Network</span>
-              <span className="font-medium text-black">{networkName}</span>
+          <div className="info-list">
+            <div className="info-row">
+              <span className="info-label">Network</span>
+              <span className="info-value">{networkName}</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Token</span>
-              <span className="font-medium text-black">USDC</span>
+            <div className="info-row">
+              <span className="info-label">Token</span>
+              <span className="info-value">USDC</span>
             </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-neutral-500">Recipient</span>
-              <span className="font-mono text-black">
+            <div className="info-row">
+              <span className="info-label">Recipient</span>
+              <span className="info-value info-mono">
                 {meta.recipientAddress.slice(0, 6)}…{meta.recipientAddress.slice(-4)}
               </span>
             </div>
             {account && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-neutral-500">Your wallet</span>
-                <span className="font-mono text-black">
+              <div className="info-row">
+                <span className="info-label">Your wallet</span>
+                <span className="info-value info-mono">
                   {account.slice(0, 6)}…{account.slice(-4)}
                 </span>
               </div>
             )}
           </div>
 
-          <div className="p-6 space-y-3">
+          <div className="action-box">
             {isDone ? (
-              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-black py-2.5">
+              <div className="download-success">
                 <CheckCircle size={18} />
                 File downloaded!
               </div>
@@ -667,10 +795,10 @@ export default function Download() {
               <button
                 onClick={account ? payAndDownload : connectWallet}
                 disabled={isLoading}
-                className="w-full flex items-center justify-center gap-2 bg-black text-white text-sm font-semibold py-3 px-4 rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="button"
               >
                 {isLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <div className="spinner"></div>
                 ) : account ? (
                   <Lock size={16} />
                 ) : (
@@ -680,19 +808,15 @@ export default function Download() {
               </button>
             )}
 
-            {error && (
-              <p className="text-xs text-center text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                {error}
-              </p>
-            )}
+            {error && <p className="error-msg">{error}</p>}
 
-            <p className="text-center text-[10px] text-neutral-400">
-              <Lock size={10} className="inline mr-1" />
+            <p className="footer-note">
+              <Lock size={10} />
               File decrypts server-side only after payment confirms on-chain.
             </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
