@@ -13,7 +13,7 @@
  *   npx tsx scripts/test-download.ts http://localhost:3000/api/download/abc-123
  *
  * Requirements:
- *   - TEST_CLIENT_PRIVATE_KEY in .env.local (the wallet paying USDC)
+ *   - TEST_CLIENT_PRIVATE_KEY in .env (the wallet paying USDC)
  *   - That wallet must have USDC on Injective EVM
  *   - Your dev server must be running (npm run dev)
  */
@@ -22,8 +22,8 @@ import fs from "fs";
 import path from "path";
 import { createInjectiveClient } from "@injectivelabs/x402/client";
 
-// Manually load .env.local (tsx doesn't auto-load it like Next.js does)
-const envPath = path.join(process.cwd(), ".env.local");
+// Manually load .env (tsx doesn't auto-load it like Next.js does)
+const envPath = path.join(process.cwd(), ".env");
 if (fs.existsSync(envPath)) {
   const lines = fs.readFileSync(envPath, "utf-8").split("\n");
   for (const line of lines) {
@@ -44,7 +44,7 @@ async function main() {
 
   const privateKey = process.env.TEST_CLIENT_PRIVATE_KEY;
   if (!privateKey || privateKey === "0xYOUR_PAYER_PRIVATE_KEY_HERE") {
-    console.error("❌  Set TEST_CLIENT_PRIVATE_KEY in your .env.local file");
+    console.error("❌  Set TEST_CLIENT_PRIVATE_KEY in your .env file");
     process.exit(1);
   }
 
