@@ -17,44 +17,58 @@ It was built to accompany the comprehensive step-by-step developer tutorial: **[
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router)
-- **Styling:** Tailwind CSS v4
+- **Backend:** Node.js, Express, Multer
+- **Frontend:** React, Vite, Tailwind CSS v4
 - **Web3 / Protocol:** `@injectivelabs/x402`, `viem`
 - **Icons:** `lucide-react`
 - **Storage:** Local `.storage` directory (can be easily swapped for AWS S3)
 
 ## Quickstart
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+Since the project is split into a frontend and a backend, you'll need to run two terminal windows.
 
-2. **Set up your environment variables:**
-   Create a `.env.local` file in the root directory:
-   ```env
-   # Secret used to encrypt files at rest (min 32 chars)
-   ENCRYPTION_SECRET=super_secret_tutorial_key_123
+### 1. Start the Server
 
-   # The Facilitator Wallet (pays INJ gas to settle the USDC transfer on-chain)
-   # Must be funded with a small amount of INJ on Injective EVM.
-   PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY
-   ```
+```bash
+cd server
+npm install
+```
 
-3. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+Create a `.env` file in the `server` directory:
+```env
+# Secret used to encrypt files at rest (min 32 chars)
+ENCRYPTION_SECRET=super_secret_tutorial_key_123
+
+# The Facilitator Wallet (pays INJ gas to settle the USDC transfer on-chain)
+# Must be funded with a small amount of INJ on Injective EVM.
+PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY
+```
+
+Start the backend:
+```bash
+npm run dev
+```
+*Server runs on http://localhost:3000*
+
+### 2. Start the Client
+
+Open a new terminal window:
+```bash
+cd client
+npm install
+npm run dev
+```
+*Client runs on http://localhost:5173 (or as indicated by Vite)*
 
 ## Testing the Agent Flow
 
-You can test the programmatic / AI Agent flow using the included test script:
+You can test the programmatic / AI Agent flow using the included test script from the `server` directory:
 
 ```bash
-# Add a funded testpayer wallet to your .env.local
+# Add a funded testpayer wallet to your server/.env
 TEST_CLIENT_PRIVATE_KEY=0xYOUR_TEST_PAYER_PRIVATE_KEY
 
 # Run the test client against an agent URL
+cd server
 npx tsx scripts/test-download.ts http://localhost:3000/api/download/<file-id>
 ```
