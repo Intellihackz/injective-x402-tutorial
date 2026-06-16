@@ -196,6 +196,37 @@ body {
 
 ---
 
+## Buffer Polyfill
+
+Because x402 uses cryptography that relies on the Node.js `Buffer` object (which Vite does not polyfill automatically), we need to add it to the window.
+
+Install the `buffer` package:
+```bash
+npm install buffer
+```
+
+Then, inject it in your `src/main.tsx` file before rendering the App:
+
+```tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { Buffer } from 'buffer'
+import './index.css'
+import App from './App.tsx'
+
+if (typeof window !== 'undefined') {
+  window.Buffer = window.Buffer || Buffer
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+```
+
+---
+
 ## App Routing
 
 In the `client/` directory, replace the contents of `src/App.tsx` with the following:
