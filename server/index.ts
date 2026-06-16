@@ -17,7 +17,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const STORAGE_DIR = path.join(process.cwd(), ".storage");
 
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['x-transaction-hash', 'x402-version']
+}));
 app.use(express.json());
 
 // ----------------------------------------------------
@@ -115,10 +117,14 @@ app.get("/api/download/:id", async (req, res) => {
 
     if (!verifyResult.isValid) return res.status(402).json({ error: "Payment invalid" });
 
-    await facilitator.settle({
+    const settleResult = await facilitator.settle({
       paymentPayload,
       paymentRequirements: requirements,
     });
+    
+    const txHash = (settleResult as any)?.transactionHash || (settleResult as any)?.txHash || "unknown";
+    console.log(`Payment settled successfully! TX Hash: ${txHash}`);
+    res.setHeader("x-transaction-hash", txHash);
 
     // 5. Decrypt and Stream File (abstracted to utility)
     const decryptedBuffer = await decryptFile(id, process.env.ENCRYPTION_SECRET!);

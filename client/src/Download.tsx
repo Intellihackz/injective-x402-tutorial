@@ -97,6 +97,7 @@ export default function Download() {
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState("");
   const [account, setAccount] = useState<`0x${string}` | null>(null);
+  const [txHash, setTxHash] = useState("");
 
   useEffect(() => {
     if (!id) return;
@@ -227,6 +228,12 @@ export default function Download() {
       }
 
       setStep("done");
+      
+      const returnedTxHash = response.headers.get("x-transaction-hash");
+      if (returnedTxHash) {
+        setTxHash(returnedTxHash);
+      }
+      
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -329,9 +336,24 @@ export default function Download() {
 
           <div className="action-box">
             {isDone ? (
-              <div className="download-success">
-                <CheckCircle size={18} />
-                File downloaded!
+              <div className="download-success" style={{ flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <CheckCircle size={18} />
+                  File downloaded!
+                </div>
+                {txHash && (
+                  <div style={{ fontSize: "0.75rem", background: "var(--bg)", padding: "0.75rem", borderRadius: "8px", width: "100%" }}>
+                    <div style={{ color: "var(--text-muted)", marginBottom: "0.25rem" }}>Transaction Hash:</div>
+                    <a 
+                      href={`https://testnet.explorer.injective.network/transaction/${txHash}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ color: "var(--text)", textDecoration: "underline", wordBreak: "break-all", fontFamily: "var(--font-mono)" }}
+                    >
+                      {txHash}
+                    </a>
+                  </div>
+                )}
               </div>
             ) : (
               <button
