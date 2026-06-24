@@ -35,7 +35,10 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const fileId = crypto.randomUUID();
     
     // 1. Encrypt file with per-file salt (abstracted to utility)
-    await encryptFile(file.buffer, fileId, process.env.ENCRYPTION_SECRET!);
+    const encryptedBuffer = await encryptFile(file.buffer, process.env.ENCRYPTION_SECRET!);
+    
+    await fs.mkdir(STORAGE_DIR, { recursive: true });
+    await fs.writeFile(path.join(STORAGE_DIR, fileId), encryptedBuffer);
 
     // 2. Save metadata "price tag"
     const metadata = {
@@ -132,7 +135,8 @@ app.get("/api/download/:id", async (req, res) => {
     res.setHeader("x-transaction-hash", txHash);
 
     // 5. Decrypt and Stream File (abstracted to utility)
-    const decryptedBuffer = await decryptFile(id, process.env.ENCRYPTION_SECRET!);
+    const encryptedFile = await fs.readFile(path.join(STORAGE_DIR, id));
+    const decryptedBuffer = await decryptFile(encryptedFile, process.env.ENCRYPTION_SECRET!);
 
     res.setHeader("Content-Type", metadata.mimeType);
     res.setHeader(

@@ -2,7 +2,10 @@
 
 This repository demonstrates how to build a fully functional **Pay-to-Unlock (Gated Content)** platform using the [x402 Protocol](https://docs.injective.com) on Injective EVM.
 
-It was built to accompany the comprehensive step-by-step developer tutorial: **[Building a Pay-to-Unlock Content Platform with Injective x402](Tutorial.md)**.
+It was built to accompany the comprehensive step-by-step developer tutorial:
+- **[Part 0: Setup & Theory](tutorial/0-setup.md)**
+- **[Part 1: Backend Server](tutorial/1-server.md)**
+- **[Part 2: Frontend Client](tutorial/2-frontend.md)**
 
 ## How it works
 
