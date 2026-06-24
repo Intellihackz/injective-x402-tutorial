@@ -24,22 +24,7 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-
-const INJECTIVE_NETWORKS: Record<
-  string,
-  { chainId: number; chain: Chain; rpcUrl: string }
-> = {
-  "eip155:1776": {
-    chainId: 1776,
-    chain: getViemChain("eip155:1776"),
-    rpcUrl: "https://sentry.evm-rpc.injective.network",
-  },
-  "eip155:1439": {
-    chainId: 1439,
-    chain: getViemChain("eip155:1439"),
-    rpcUrl: "https://k8s.testnet.json-rpc.injective.network",
-  },
-};
+import { INJECTIVE_NETWORKS, formatBytes, switchToInjectiveChain } from "./utils";
 
 type Step = "idle" | "switching" | "connecting" | "signing" | "verifying" | "done" | "error";
 
@@ -54,42 +39,7 @@ interface FileMeta {
   network: string;
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
 
-async function switchToInjectiveChain(network: string) {
-  const cfg = INJECTIVE_NETWORKS[network];
-  if (!cfg) throw new Error(`Unsupported network: ${network}`);
-
-  const hexChainId = `0x${cfg.chainId.toString(16)}`;
-
-  try {
-    await (window as any).ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: hexChainId }],
-    });
-  } catch (err: any) {
-    if (err.code === 4902 || err.code === -32603) {
-      await (window as any).ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: hexChainId,
-            chainName: cfg.chain.name,
-            rpcUrls: [cfg.rpcUrl],
-            nativeCurrency: { name: "Injective", symbol: "INJ", decimals: 18 },
-            blockExplorerUrls: [cfg.chain.blockExplorers?.default?.url ?? ""],
-          },
-        ],
-      });
-    } else {
-      throw err;
-    }
-  }
-}
 
 export default function Download() {
   const { id } = useParams<{ id: string }>();
@@ -101,15 +51,8 @@ export default function Download() {
 
   useEffect(() => {
     if (!id) return;
-    // Fix: point to localhost:3000 where our Express server runs
-    fetch(`http://localhost:3000/api/download/${id}`)
-      .then((r) => {
-        // The API returns 402 with the 'requirements' and 'accepts' payload
-        // But wait, the info endpoint? I forgot to create the /info endpoint in the express server!
-        // The user's code expects a separate `/info` endpoint, or we can just fetch the `402` response and parse it.
-        // Actually, the easiest is to add a `/api/download/:id/info` route to Express.
-        return fetch(`http://localhost:3000/api/download/${id}/info`);
-      })
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    fetch(`${API_URL}/api/download/${id}/info`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) setError("File not found.");
@@ -218,7 +161,8 @@ export default function Download() {
 
       const paymentHeader = encodePaymentSignatureHeader(paymentPayload);
 
-      const response = await fetch(`http://localhost:3000/api/download/${id}`, {
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const response = await fetch(`${API_URL}/api/download/${id}`, {
         headers: { "PAYMENT-SIGNATURE": paymentHeader },
       });
 

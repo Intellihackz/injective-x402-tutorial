@@ -31,6 +31,10 @@ PRIVATE_KEY=0xYOUR_FACILITATOR_PRIVATE_KEY
 
 We don't want a single global salt for encryption because it's less secure. Instead, we generate a random 16-byte salt for *every single file uploaded*, and use that alongside the `ENCRYPTION_SECRET` to derive a unique key. 
 
+> 💡 **Note on Secrets vs. Salts**: 
+> - **Secret**: The `secret` parameter passed to our utility is derived from the `ENCRYPTION_SECRET` in our server's `.env` file. It is highly confidential.
+> - **Salt**: The `salt` does not need to be passed in by the user or hidden. It is unique per file, generated and stored alongside the file upon upload, and simply read from the file when downloaded.
+
 Create `server/utils/encryption.ts`:
 
 <details>
@@ -112,6 +116,8 @@ export function getFacilitator(): InjectiveFacilitator {
 
 Now, let's wire up our `POST /api/upload` and `GET /api/download/:id` routes in `server/index.ts`.
 
+> ⚠️ **PRODUCTION WARNING**: In this tutorial, we use `multer.memoryStorage()` which stores all uploaded files directly in the server's RAM. This is perfectly fine for a demo, but in production, all files are lost when the server restarts. You must configure [multer](https://github.com/expressjs/multer#storage) to use local disk storage (`multer.diskStorage()`) or a cloud service like AWS S3 via [multer-s3](https://github.com/anacronw/multer-s3) so your files are persistently stored.
+
 <details>
 <summary>Click to view <code>server/index.ts</code></summary>
 
@@ -164,7 +170,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     res.json({ fileId });
   } catch (error) {
-    res.status(500).json({ error: "Upload failed" });
+    console.error("Error during upload:", error);
+    res.status(500).json({ error: "Upload failed. Please check server logs." });
   }
 });
 
@@ -187,6 +194,7 @@ app.get("/api/download/:id", async (req, res) => {
 
     const requirements = {
       scheme: "exact" as const, network: metadata.network, asset: metadata.assetAddress,
+      // We multiply the price by 1,000,000 because USDC uses 6 decimal places (1 USDC = 1,000,000 micro-USDC)
       amount: Math.floor(parseFloat(metadata.price) * 1_000_000).toString(), payTo: metadata.recipientAddress,
       maxTimeoutSeconds: 60, extra: {},
     };

@@ -20,6 +20,9 @@ Before we build the components, let's establish our clean, monochrome design sys
 
 In `client/src/index.css`, replace the contents with the following:
 
+<details>
+<summary>Click to view <code>index.css</code></summary>
+
 ```css
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -194,6 +197,8 @@ body {
 .title-sm { font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem; }
 ```
 
+</details>
+
 ---
 
 ## Buffer Polyfill
@@ -249,6 +254,89 @@ function App() {
 
 export default App;
 ```
+
+
+## Utility Functions (`utils.ts`)
+
+Let's extract our network configurations and helper functions into a separate file to keep our components clean.
+
+Create `client/src/utils.ts`:
+
+<details>
+<summary>Click to view <code>src/utils.ts</code></summary>
+
+```typescript
+import { type Chain } from "viem";
+import { getViemChain } from "@injectivelabs/x402";
+
+export const INJECTIVE_NETWORKS: Record<
+  string,
+  { chainId: number; chain: Chain; rpcUrl: string }
+> = {
+  "eip155:1776": {
+    chainId: 1776,
+    chain: getViemChain("eip155:1776"),
+    rpcUrl: "https://sentry.evm-rpc.injective.network",
+  },
+  "eip155:1439": {
+    chainId: 1439,
+    chain: getViemChain("eip155:1439"),
+    rpcUrl: "https://k8s.testnet.json-rpc.injective.network",
+  },
+};
+
+export function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
+export async function switchToInjectiveChain(network: string) {
+  const cfg = INJECTIVE_NETWORKS[network];
+  if (!cfg) throw new Error(`Unsupported network: ${network}`);
+
+  const hexChainId = `0x${cfg.chainId.toString(16)}`;
+
+  try {
+    await (window as any).ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: hexChainId }],
+    });
+  } catch (err: any) {
+    if (err.code === 4902 || err.code === -32603) {
+      await (window as any).ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: hexChainId,
+            chainName: cfg.chain.name,
+            rpcUrls: [cfg.rpcUrl],
+            nativeCurrency: { name: "Injective", symbol: "INJ", decimals: 18 },
+            blockExplorerUrls: [cfg.chain.blockExplorers?.default?.url ?? ""],
+          },
+        ],
+      });
+    } else {
+      throw err;
+    }
+  }
+}
+
+```
+</details>
+
+## Environment Variables
+
+Since our Express server runs on port `3000` and Vite runs on port `5173`, we cannot assume they share the same URL. We use an environment variable to point to the API.
+Create a `.env` file in your `client` folder:
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+> 💡 **Human vs Agent URLs**: Our app generates two distinct URLs for the uploaded file:
+> 1. **🧑 Human Pay (React UI)**: Points to the Vite frontend (e.g., `http://localhost:5173/download/:id`). This opens a browser interface where humans can connect MetaMask and click a button to pay.
+> 2. **🤖 Agent Pay (Raw API)**: Points directly to the Express backend (e.g., `http://localhost:3000/api/download/:id`). This returns the raw `402 Payment Required` header that autonomous AI agents can read and fulfill programmatically without any UI!
 
 ## The Upload Interface (`Home.tsx`)
 
@@ -312,7 +400,8 @@ export default function Home() {
       formData.append("assetAddress", TOKEN_ADDRESS);
       formData.append("network", NETWORK);
 
-      const res = await fetch("http://localhost:3000/api/upload", {
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${API_URL}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -321,7 +410,7 @@ export default function Home() {
       const data = await res.json();
       
       setHumanUrl(`${window.location.origin}/download/${data.fileId}`);
-      setAgentUrl(`http://localhost:3000/api/download/${data.fileId}`);
+      setAgentUrl(`${API_URL}/api/download/${data.fileId}`);
     } catch (error) {
       console.error(error);
       alert("Failed to upload and encrypt file.");
@@ -483,6 +572,7 @@ export default function Home() {
     </div>
   );
 }
+
 ```
 </details>
 
@@ -519,24 +609,10 @@ import {
   Wallet,
   Lock,
   CheckCircle,
+  Loader2,
   AlertCircle,
 } from "lucide-react";
-
-const INJECTIVE_NETWORKS: Record<
-  string,
-  { chainId: number; chain: Chain; rpcUrl: string }
-> = {
-  "eip155:1776": {
-    chainId: 1776,
-    chain: getViemChain("eip155:1776"),
-    rpcUrl: "https://sentry.evm-rpc.injective.network",
-  },
-  "eip155:1439": {
-    chainId: 1439,
-    chain: getViemChain("eip155:1439"),
-    rpcUrl: "https://k8s.testnet.json-rpc.injective.network",
-  },
-};
+import { INJECTIVE_NETWORKS, formatBytes, switchToInjectiveChain } from "./utils";
 
 type Step = "idle" | "switching" | "connecting" | "signing" | "verifying" | "done" | "error";
 
@@ -551,42 +627,7 @@ interface FileMeta {
   network: string;
 }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
 
-async function switchToInjectiveChain(network: string) {
-  const cfg = INJECTIVE_NETWORKS[network];
-  if (!cfg) throw new Error(`Unsupported network: ${network}`);
-
-  const hexChainId = `0x${cfg.chainId.toString(16)}`;
-
-  try {
-    await (window as any).ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: hexChainId }],
-    });
-  } catch (err: any) {
-    if (err.code === 4902 || err.code === -32603) {
-      await (window as any).ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: hexChainId,
-            chainName: cfg.chain.name,
-            rpcUrls: [cfg.rpcUrl],
-            nativeCurrency: { name: "Injective", symbol: "INJ", decimals: 18 },
-            blockExplorerUrls: [cfg.chain.blockExplorers?.default?.url ?? ""],
-          },
-        ],
-      });
-    } else {
-      throw err;
-    }
-  }
-}
 
 export default function Download() {
   const { id } = useParams<{ id: string }>();
@@ -594,10 +635,12 @@ export default function Download() {
   const [step, setStep] = useState<Step>("idle");
   const [error, setError] = useState("");
   const [account, setAccount] = useState<`0x${string}` | null>(null);
+  const [txHash, setTxHash] = useState("");
 
   useEffect(() => {
     if (!id) return;
-    fetch(`http://localhost:3000/api/download/${id}/info`)
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    fetch(`${API_URL}/api/download/${id}/info`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) setError("File not found.");
@@ -706,7 +749,8 @@ export default function Download() {
 
       const paymentHeader = encodePaymentSignatureHeader(paymentPayload);
 
-      const response = await fetch(`http://localhost:3000/api/download/${id}`, {
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const response = await fetch(`${API_URL}/api/download/${id}`, {
         headers: { "PAYMENT-SIGNATURE": paymentHeader },
       });
 
@@ -716,6 +760,12 @@ export default function Download() {
       }
 
       setStep("done");
+      
+      const returnedTxHash = response.headers.get("x-transaction-hash");
+      if (returnedTxHash) {
+        setTxHash(returnedTxHash);
+      }
+      
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -818,9 +868,24 @@ export default function Download() {
 
           <div className="action-box">
             {isDone ? (
-              <div className="download-success">
-                <CheckCircle size={18} />
-                File downloaded!
+              <div className="download-success" style={{ flexDirection: "column", gap: "1rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <CheckCircle size={18} />
+                  File downloaded!
+                </div>
+                {txHash && (
+                  <div style={{ fontSize: "0.75rem", background: "var(--bg)", padding: "0.75rem", borderRadius: "8px", width: "100%" }}>
+                    <div style={{ color: "var(--text-muted)", marginBottom: "0.25rem" }}>Transaction Hash:</div>
+                    <a 
+                      href={`https://testnet.explorer.injective.network/transaction/${txHash}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      style={{ color: "var(--text)", textDecoration: "underline", wordBreak: "break-all", fontFamily: "var(--font-mono)" }}
+                    >
+                      {txHash}
+                    </a>
+                  </div>
+                )}
               </div>
             ) : (
               <button
@@ -851,6 +916,7 @@ export default function Download() {
     </div>
   );
 }
+
 ```
 </details>
 

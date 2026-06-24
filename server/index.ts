@@ -56,8 +56,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     res.json({ fileId });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Upload failed" });
+    console.error("Error during upload:", error);
+    res.status(500).json({ error: "Upload failed. Please check server logs." });
   }
 });
 

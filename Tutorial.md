@@ -26,8 +26,8 @@ Before diving into the code, let's briefly look at how x402 works under the hood
 x402 embeds crypto payments natively into the HTTP protocol. Instead of managing API keys, prior registrations, or credit card subscriptions, a server can simply demand payment on the fly:
 
 1. A client requests an API endpoint.
-2. The server responds with a `402 Payment Required` status and a price quote.
-3. The client signs an off-chain transaction (e.g., a USDC transfer).
+2. The server responds with an HTTP `402 Payment Required` status and a price quote.
+3. The client signs an off-chain EIP-712/EIP-3009 authorization payload permitting the transfer of tokens (e.g., USDC).
 4. An **x402 Facilitator** submits this signature to the blockchain.
 5. The client retries the request with the payment receipt, and the server delivers the data.
 

@@ -50,7 +50,8 @@ export default function Home() {
       formData.append("assetAddress", TOKEN_ADDRESS);
       formData.append("network", NETWORK);
 
-      const res = await fetch("http://localhost:3000/api/upload", {
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${API_URL}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -59,7 +60,7 @@ export default function Home() {
       const data = await res.json();
       
       setHumanUrl(`${window.location.origin}/download/${data.fileId}`);
-      setAgentUrl(`http://localhost:3000/api/download/${data.fileId}`);
+      setAgentUrl(`${API_URL}/api/download/${data.fileId}`);
     } catch (error) {
       console.error(error);
       alert("Failed to upload and encrypt file.");
