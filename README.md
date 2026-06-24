@@ -7,6 +7,8 @@ It was built to accompany the comprehensive step-by-step developer tutorial:
 - **[Part 1: Backend Server](tutorial/1-server.md)**
 - **[Part 2: Frontend Client](tutorial/2-frontend.md)**
 
+![x402 Demo Interface](https://mintcdn.com/injectivelabs/QW0WWCmSlMi8lO1R/img/x402-demo-start.png?w=1100&fit=max&auto=format&n=QW0WWCmSlMi8lO1R&q=85&s=a2e226dafa7dd48f48b0e41f688e1cd0)
+
 ## How it works
 
 1. **Upload (Creator):** A creator uploads a file and sets a price in USDC. The file is encrypted AES-256-CBC server-side.
