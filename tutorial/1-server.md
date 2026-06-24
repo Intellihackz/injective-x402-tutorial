@@ -108,7 +108,7 @@ export function getFacilitator(): InjectiveFacilitator {
 
 Now, let's wire up our `POST /api/upload` and `GET /api/download/:id` routes in `server/index.ts`.
 
-> ⚠️ **PRODUCTION WARNING**: In this tutorial, we use `multer.memoryStorage()` which stores all uploaded files directly in the server's RAM. This is perfectly fine for a demo, but in production, all files are lost when the server restarts. You must configure [multer](https://github.com/expressjs/multer#storage) to use local disk storage (`multer.diskStorage()`) or a cloud service like AWS S3 via [multer-s3](https://github.com/anacronw/multer-s3) so your files are persistently stored.
+> 💡 **What is Multer?**: We use the `multer` middleware to easily parse incoming `multipart/form-data` HTTP requests, which is the standard way web forms upload files. We configure it with `multer.memoryStorage()` to temporarily buffer the file in RAM so we can seamlessly pass it into our encryption utility before saving the encrypted result to disk.
 
 <details>
 <summary>Click to view <code>server/index.ts</code></summary>
