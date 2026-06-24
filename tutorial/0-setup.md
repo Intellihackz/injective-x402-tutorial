@@ -1,6 +1,6 @@
 # Building a Pay-to-Unlock Content Platform with Injective x402
 
-Welcome! In this tutorial, we're going to build a fully functional token-gated content platform on Injective EVM. By the end, you'll have written an Express backend, built a sleek React frontend using Vite, and connected everything together into a production-ready DApp where creators can upload encrypted files and sell them directly for tokens—all while fully supporting autonomous AI agents.
+Welcome! In this tutorial, we're going to build a fully functional token-gated content platform on Injective EVM. By the end, you'll have written an Express backend, built a sleek React frontend using Vite, and connected everything together into a production-ready DApp where creators can upload encrypted files and sell them directly for tokens, all while fully supporting autonomous AI agents.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ x402 embeds crypto payments natively into the HTTP protocol. Instead of managing
 ![x402 interaction steps](https://mintcdn.com/injectivelabs/QW0WWCmSlMi8lO1R/img/x402-demo-interaction-steps.png?w=1100&fit=max&auto=format&n=QW0WWCmSlMi8lO1R&q=85&s=26ae8c109f5388904a950c5c397b1086)
 
 ### The Magic of the Facilitator
-The beauty of the x402 facilitator is that it keeps your API server entirely web-native. The Facilitator handles all the blockchain complexity—including cryptographic validation, RPC endpoint management, gas estimation, and block polling—abstracting it entirely away from the core server logic.
+The beauty of the x402 facilitator is that it keeps your API server entirely web-native. The Facilitator handles all the blockchain complexity (including cryptographic validation, RPC endpoint management, gas estimation, and block polling), abstracting it entirely away from the core server logic.
 
 ### Why Injective?
 While x402 is an open standard that supports many networks, it is especially powerful on Injective. With ~650ms block times and deterministic single-block finality, x402 payments settle faster than credit cards but at a fraction of the cost. This makes it the perfect fit for micro-transactions, pay-per-use APIs, and autonomous AI agents.
