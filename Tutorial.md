@@ -27,8 +27,8 @@ x402 embeds crypto payments natively into the HTTP protocol. Instead of managing
 
 1. A client requests an API endpoint.
 2. The server responds with an HTTP `402 Payment Required` status and a price quote.
-3. The client signs an off-chain EIP-712/EIP-3009 authorization payload permitting the transfer of tokens (e.g., USDC).
-4. An **x402 Facilitator** submits this signature to the blockchain.
+3. The client signs a USDC transfer transaction, but the transaction is not yet broadcast to the network.
+4. An **x402 facilitator** submits the signed payment to the blockchain and awaits confirmation.
 5. The client retries the request with the payment receipt, and the server delivers the data.
 
 ![x402 interaction steps](https://mintcdn.com/injectivelabs/QW0WWCmSlMi8lO1R/img/x402-demo-interaction-steps.png?w=1100&fit=max&auto=format&n=QW0WWCmSlMi8lO1R&q=85&s=26ae8c109f5388904a950c5c397b1086)
