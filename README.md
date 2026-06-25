@@ -67,13 +67,16 @@ npm run dev
 
 ## Testing the Agent Flow
 
-You can test the programmatic / AI Agent flow using the included test script from the `server` directory:
+You can test the programmatic / AI Agent flow using the included test scripts from the `server` directory:
 
 ```bash
 # Add a funded testpayer wallet to your server/.env
 TEST_CLIENT_PRIVATE_KEY=0xYOUR_TEST_PAYER_PRIVATE_KEY
 
-# Run the test client against an agent URL
+# 1. Programmatically test uploading and encrypting a file
 cd server
+npx tsx scripts/test-upload.ts ./package.json
+
+# 2. Test downloading it via the agent URL (replace <file-id> with the returned ID)
 npx tsx scripts/test-download.ts http://localhost:3000/api/download/<file-id>
 ```
