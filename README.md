@@ -75,7 +75,7 @@ TEST_CLIENT_PRIVATE_KEY=0xYOUR_TEST_PAYER_PRIVATE_KEY
 
 # 1. Programmatically test uploading and encrypting a file
 cd server
-npx tsx scripts/test-upload.ts ./package.json
+npx tsx scripts/test-upload.ts <path-to-file>
 
 # 2. Test downloading it via the agent URL (replace <file-id> with the returned ID)
 npx tsx scripts/test-download.ts http://localhost:3000/api/download/<file-id>
