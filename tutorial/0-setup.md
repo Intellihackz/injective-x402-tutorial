@@ -75,4 +75,4 @@ npm install lucide-react viem @injectivelabs/x402 react-router-dom
 
 ## Ready to Start?
 
-Head over to **[Part 1: Building the Server](Tutorial-Server.md)** to begin writing the backend infrastructure!
+Head over to **[Part 1: Building the Server](1-server.md)** to begin writing the backend infrastructure!

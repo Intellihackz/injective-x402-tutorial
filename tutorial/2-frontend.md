@@ -2,7 +2,7 @@
 
 In this section, we'll build the Vite + React frontend to provide a beautiful UI for humans to upload files, generate links, and sign EIP-3009 authorizations to download content gaslessly.
 
-If you haven't built the server yet, check out [Part 1: Building the Server](Tutorial-Server.md).
+If you haven't built the server yet, check out [Part 1: Building the Server](1-server.md).
 
 ## Table of Contents
 
@@ -934,4 +934,4 @@ npx tsx scripts/test-download.ts http://localhost:3000/api/download/<file-id>
 The script will hit the 402, parse the JSON requirements, sign the transaction using `TEST_CLIENT_PRIVATE_KEY` from `.env`, resubmit the signature, and save the decrypted file automatically!
 
 ---
-[← Back to Main Tutorial](Tutorial.md)
+[Back to Main Tutorial](0-setup.md)
