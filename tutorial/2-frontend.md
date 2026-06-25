@@ -350,6 +350,7 @@ Create `src/Home.tsx`:
 ```tsx
 import { useState } from "react";
 import { UploadCloud, Link as LinkIcon, FileCheck2, ShieldCheck, Coins } from "lucide-react";
+import { formatBytes } from "./utils";
 
 // Testnet USDC address and Chain ID
 const TOKEN_ADDRESS = "0x0C382e685bbeeFE5d3d9C29e29E341fEE8E84C5d" as `0x${string}`;
@@ -467,7 +468,7 @@ export default function Home() {
                   <>
                     <div className="upload-icon"><FileCheck2 size={24} /></div>
                     <p className="file-name">{file.name}</p>
-                    <p className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="file-size">{formatBytes(file.size)}</p>
                   </>
                 ) : (
                   <>
